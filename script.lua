@@ -1,5 +1,5 @@
 -- ============================================
--- MODERN UI - No Close Button (Minimize Only)
+-- MODERN UI - No Close Button (Minimize Only) - OPAQUE
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -29,12 +29,12 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Position = UDim2.new(0.5, -320, 0.5, -220)
 MainFrame.Size = UDim2.new(0, 640, 0, 440)
 MainFrame.ClipsDescendants = true
-MainFrame.BackgroundTransparency = 0.25
+MainFrame.BackgroundTransparency = 0 -- Fully opaque
 MainFrame.ZIndex = 10
 
 -- Open animation
 TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-    BackgroundTransparency = 0.25
+    BackgroundTransparency = 0
 }):Play()
 
 -- Corner rounding
@@ -73,7 +73,7 @@ local MinBar = Instance.new("Frame")
 MinBar.Name = "MinBar"
 MinBar.Parent = ScreenGui
 MinBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-MinBar.BackgroundTransparency = 0.25
+MinBar.BackgroundTransparency = 0 -- Fully opaque
 MinBar.BorderSizePixel = 0
 MinBar.Position = UDim2.new(0.5, -150, 0.95, -20)
 MinBar.Size = UDim2.new(0, 300, 0, 40)
@@ -155,7 +155,7 @@ end)
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
 TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-TopBar.BackgroundTransparency = 0.15
+TopBar.BackgroundTransparency = 0 -- Fully opaque
 TopBar.BorderSizePixel = 0
 TopBar.Size = UDim2.new(1, 0, 0, 55)
 RoundCorners(TopBar, 14)
@@ -232,7 +232,7 @@ end)
 local TabContainer = Instance.new("Frame")
 TabContainer.Parent = MainFrame
 TabContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-TabContainer.BackgroundTransparency = 0.15
+TabContainer.BackgroundTransparency = 0 -- Fully opaque
 TabContainer.BorderSizePixel = 0
 TabContainer.Position = UDim2.new(0, 0, 0, 55)
 TabContainer.Size = UDim2.new(0, 160, 1, -55)
@@ -241,7 +241,7 @@ TabContainer.Size = UDim2.new(0, 160, 1, -55)
 local Content = Instance.new("ScrollingFrame")
 Content.Parent = MainFrame
 Content.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-Content.BackgroundTransparency = 0.15
+Content.BackgroundTransparency = 0 -- Fully opaque
 Content.BorderSizePixel = 0
 Content.Position = UDim2.new(0, 160, 0, 55)
 Content.Size = UDim2.new(1, -160, 1, -55)
@@ -260,7 +260,7 @@ local function CreateTab(name, icon)
     local btn = Instance.new("TextButton")
     btn.Parent = TabContainer
     btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    btn.BackgroundTransparency = 0.3
+    btn.BackgroundTransparency = 0
     btn.BorderSizePixel = 0
     btn.Position = UDim2.new(0, 5, 0, #TabContainer:GetChildren() * 48 + 10)
     btn.Size = UDim2.new(1, -10, 0, 42)
@@ -282,11 +282,11 @@ local function CreateTab(name, icon)
     RoundCorners(indicator, 2)
     
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.1}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 55)}):Play()
     end)
     btn.MouseLeave:Connect(function()
         if currentTab ~= name then
-            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.3}):Play()
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 30, 40)}):Play()
         end
     end)
     
@@ -300,7 +300,6 @@ local function CreateTab(name, icon)
         for _, child in pairs(TabContainer:GetChildren()) do
             if child:IsA("TextButton") then
                 child.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-                child.BackgroundTransparency = 0.3
                 child.TextColor3 = Color3.fromRGB(180, 180, 200)
                 local ind = child:FindFirstChildWhichIsA("Frame")
                 if ind then ind.Visible = false end
@@ -308,7 +307,6 @@ local function CreateTab(name, icon)
         end
         
         btn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-        btn.BackgroundTransparency = 0.1
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         indicator.Visible = true
     end
@@ -354,7 +352,7 @@ local function AddButton(text, desc, callback)
     local frame = Instance.new("Frame")
     frame.Parent = Content
     frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    frame.BackgroundTransparency = 0.25
+    frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 15, 0, contentY)
     frame.Size = UDim2.new(1, -30, 0, 50)
@@ -387,7 +385,7 @@ local function AddButton(text, desc, callback)
     local btn = Instance.new("TextButton")
     btn.Parent = frame
     btn.BackgroundColor3 = Color3.fromRGB(60, 80, 200)
-    btn.BackgroundTransparency = 0.15
+    btn.BackgroundTransparency = 0
     btn.BorderSizePixel = 0
     btn.Position = UDim2.new(1, -110, 0.5, -18)
     btn.Size = UDim2.new(0, 95, 0, 36)
@@ -399,10 +397,10 @@ local function AddButton(text, desc, callback)
     
     btn.MouseButton1Click:Connect(callback)
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.05}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 100, 220)}):Play()
     end)
     btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.15}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 80, 200)}):Play()
     end)
     
     contentY = contentY + 58
@@ -415,7 +413,7 @@ local function AddToggle(text, default, callback)
     local frame = Instance.new("Frame")
     frame.Parent = Content
     frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    frame.BackgroundTransparency = 0.25
+    frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 15, 0, contentY)
     frame.Size = UDim2.new(1, -30, 0, 45)
@@ -435,7 +433,7 @@ local function AddToggle(text, default, callback)
     local toggle = Instance.new("Frame")
     toggle.Parent = frame
     toggle.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
-    toggle.BackgroundTransparency = 0.2
+    toggle.BackgroundTransparency = 0
     toggle.BorderSizePixel = 0
     toggle.Position = UDim2.new(1, -55, 0.5, -15)
     toggle.Size = UDim2.new(0, 40, 0, 30)
@@ -452,10 +450,10 @@ local function AddToggle(text, default, callback)
     local function update(val)
         state = val
         if state then
-            TweenService:Create(toggle, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(60, 200, 120), BackgroundTransparency = 0.1}):Play()
+            TweenService:Create(toggle, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(60, 200, 120)}):Play()
             TweenService:Create(indicator, TweenInfo.new(0.3), {Position = UDim2.new(1, -27, 0.5, -12)}):Play()
         else
-            TweenService:Create(toggle, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(80, 80, 100), BackgroundTransparency = 0.2}):Play()
+            TweenService:Create(toggle, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(80, 80, 100)}):Play()
             TweenService:Create(indicator, TweenInfo.new(0.3), {Position = UDim2.new(0, 3, 0.5, -12)}):Play()
         end
         if callback then callback(state) end
@@ -478,7 +476,7 @@ local function AddSlider(text, min, max, default, callback)
     local frame = Instance.new("Frame")
     frame.Parent = Content
     frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    frame.BackgroundTransparency = 0.25
+    frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 15, 0, contentY)
     frame.Size = UDim2.new(1, -30, 0, 55)
@@ -509,7 +507,7 @@ local function AddSlider(text, min, max, default, callback)
     local bg = Instance.new("Frame")
     bg.Parent = frame
     bg.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-    bg.BackgroundTransparency = 0.2
+    bg.BackgroundTransparency = 0
     bg.BorderSizePixel = 0
     bg.Position = UDim2.new(0, 12, 0.65, 0)
     bg.Size = UDim2.new(1, -24, 0, 6)
@@ -587,8 +585,7 @@ local function MinimizeUI()
     isMinimized = true
     
     TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        Size = UDim2.new(0, 0, 0, 0),
-        BackgroundTransparency = 1
+        Size = UDim2.new(0, 0, 0, 0)
     }):Play()
     
     task.wait(0.2)
@@ -602,7 +599,7 @@ local function MinimizeUI()
     TweenService:Create(MinBar, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
         Position = UDim2.new(0.5, -150, 0.95, -20),
         Size = UDim2.new(0, 300, 0, 40),
-        BackgroundTransparency = 0.25
+        BackgroundTransparency = 0
     }):Play()
     
     for _, child in pairs(MinBar:GetChildren()) do
@@ -631,7 +628,7 @@ local function ExpandUI()
     
     TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
         Size = UDim2.new(0, 640, 0, 440),
-        BackgroundTransparency = 0.25
+        BackgroundTransparency = 0
     }):Play()
 end
 
@@ -747,7 +744,7 @@ AddButton("Terminate Script", "⚠️ Stops all script execution", function()
     local box = Instance.new("Frame")
     box.Parent = confirm
     box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    box.BackgroundTransparency = 0.1
+    box.BackgroundTransparency = 0
     box.BorderSizePixel = 0
     box.Position = UDim2.new(0.5, -150, 0.5, -60)
     box.Size = UDim2.new(0, 300, 0, 120)
@@ -777,7 +774,7 @@ AddButton("Terminate Script", "⚠️ Stops all script execution", function()
     local yesBtn = Instance.new("TextButton")
     yesBtn.Parent = box
     yesBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-    yesBtn.BackgroundTransparency = 0.2
+    yesBtn.BackgroundTransparency = 0
     yesBtn.BorderSizePixel = 0
     yesBtn.Position = UDim2.new(0.5, -110, 1, -45)
     yesBtn.Size = UDim2.new(0, 100, 0, 35)
@@ -790,7 +787,7 @@ AddButton("Terminate Script", "⚠️ Stops all script execution", function()
     local noBtn = Instance.new("TextButton")
     noBtn.Parent = box
     noBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 120)
-    noBtn.BackgroundTransparency = 0.3
+    noBtn.BackgroundTransparency = 0
     noBtn.BorderSizePixel = 0
     noBtn.Position = UDim2.new(0.5, 10, 1, -45)
     noBtn.Size = UDim2.new(0, 100, 0, 35)
