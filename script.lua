@@ -1,5 +1,5 @@
 -- ============================================
--- MODERN UI - Fixed Minimize Position
+-- MODERN UI - No Close Button (Minimize Only)
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -16,7 +16,7 @@ local player = Players.LocalPlayer
 -- ============================================
 local isMinimized = false
 local isHidden = false
-local barPosition = UDim2.new(0.5, -150, 0.95, -20) -- Bottom center
+local barPosition = UDim2.new(0.5, -150, 0.95, -20)
 
 -- ============================================
 -- MAIN FRAME
@@ -67,7 +67,7 @@ Shadow.Size = UDim2.new(1, -16, 1, -16)
 RoundCorners(Shadow, 14)
 
 -- ============================================
--- MINIMIZED BAR (Positioned at bottom center)
+-- MINIMIZED BAR
 -- ============================================
 local MinBar = Instance.new("Frame")
 MinBar.Name = "MinBar"
@@ -75,7 +75,7 @@ MinBar.Parent = ScreenGui
 MinBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MinBar.BackgroundTransparency = 0.25
 MinBar.BorderSizePixel = 0
-MinBar.Position = UDim2.new(0.5, -150, 0.95, -20) -- Bottom center
+MinBar.Position = UDim2.new(0.5, -150, 0.95, -20)
 MinBar.Size = UDim2.new(0, 300, 0, 40)
 MinBar.Visible = false
 MinBar.ZIndex = 20
@@ -127,7 +127,7 @@ MinStatus.TextColor3 = Color3.fromRGB(60, 200, 120)
 MinStatus.TextSize = 11
 MinStatus.TextXAlignment = Enum.TextXAlignment.Left
 
--- MinBar Expand Button
+-- MinBar Expand Button (only button)
 local MinExpandBtn = Instance.new("TextButton")
 MinExpandBtn.Parent = MinBar
 MinExpandBtn.BackgroundColor3 = Color3.fromRGB(60, 200, 120)
@@ -141,34 +141,16 @@ MinExpandBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinExpandBtn.TextSize = 16
 RoundCorners(MinExpandBtn, 15)
 
--- MinBar Close Button
-local MinCloseBtn = Instance.new("TextButton")
-MinCloseBtn.Parent = MinBar
-MinCloseBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-MinCloseBtn.BackgroundTransparency = 0.6
-MinCloseBtn.BorderSizePixel = 0
-MinCloseBtn.Position = UDim2.new(1, -85, 0.5, -15)
-MinCloseBtn.Size = UDim2.new(0, 30, 0, 30)
-MinCloseBtn.Font = Enum.Font.GothamBold
-MinCloseBtn.Text = "✕"
-MinCloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinCloseBtn.TextSize = 16
-RoundCorners(MinCloseBtn, 15)
-
--- MinBar hover effects
-local function AddMinHoverEffect(button)
-    button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
-    end)
-    button.MouseLeave:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundTransparency = 0.6}):Play()
-    end)
-end
-AddMinHoverEffect(MinExpandBtn)
-AddMinHoverEffect(MinCloseBtn)
+-- MinBar hover effect
+MinExpandBtn.MouseEnter:Connect(function()
+    TweenService:Create(MinExpandBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
+end)
+MinExpandBtn.MouseLeave:Connect(function()
+    TweenService:Create(MinExpandBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.6}):Play()
+end)
 
 -- ============================================
--- TOP BAR
+-- TOP BAR (No Close Button)
 -- ============================================
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
@@ -222,13 +204,13 @@ Subtitle.TextColor3 = Color3.fromRGB(150, 150, 180)
 Subtitle.TextSize = 12
 Subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimize Button
+-- Minimize Button (only button on top bar)
 local MinBtn = Instance.new("TextButton")
 MinBtn.Parent = TopBar
 MinBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 50)
 MinBtn.BackgroundTransparency = 0.6
 MinBtn.BorderSizePixel = 0
-MinBtn.Position = UDim2.new(1, -85, 0.5, -15)
+MinBtn.Position = UDim2.new(1, -45, 0.5, -15)
 MinBtn.Size = UDim2.new(0, 30, 0, 30)
 MinBtn.Font = Enum.Font.GothamBold
 MinBtn.Text = "─"
@@ -236,31 +218,13 @@ MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinBtn.TextSize = 18
 RoundCorners(MinBtn, 15)
 
--- Close Button
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Parent = TopBar
-CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-CloseBtn.BackgroundTransparency = 0.6
-CloseBtn.BorderSizePixel = 0
-CloseBtn.Position = UDim2.new(1, -45, 0.5, -15)
-CloseBtn.Size = UDim2.new(0, 30, 0, 30)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Text = "✕"
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.TextSize = 16
-RoundCorners(CloseBtn, 15)
-
--- Button hover effects
-local function AddHoverEffect(button)
-    button.MouseEnter:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
-    end)
-    button.MouseLeave:Connect(function()
-        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundTransparency = 0.6}):Play()
-    end)
-end
-AddHoverEffect(MinBtn)
-AddHoverEffect(CloseBtn)
+-- Button hover effect
+MinBtn.MouseEnter:Connect(function()
+    TweenService:Create(MinBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
+end)
+MinBtn.MouseLeave:Connect(function()
+    TweenService:Create(MinBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.6}):Play()
+end)
 
 -- ============================================
 -- TABS
@@ -622,7 +586,6 @@ local function MinimizeUI()
     if isMinimized then return end
     isMinimized = true
     
-    -- Hide main frame with animation
     TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
         Size = UDim2.new(0, 0, 0, 0),
         BackgroundTransparency = 1
@@ -631,7 +594,6 @@ local function MinimizeUI()
     task.wait(0.2)
     MainFrame.Visible = false
     
-    -- Show min bar at bottom center
     MinBar.Visible = true
     MinBar.Position = UDim2.new(0.5, -150, 0.95, 20)
     MinBar.Size = UDim2.new(0, 0, 0, 40)
@@ -643,7 +605,6 @@ local function MinimizeUI()
         BackgroundTransparency = 0.25
     }):Play()
     
-    -- Show min bar contents
     for _, child in pairs(MinBar:GetChildren()) do
         if child:IsA("TextLabel") or child:IsA("TextButton") then
             child.Visible = true
@@ -655,7 +616,6 @@ local function ExpandUI()
     if not isMinimized then return end
     isMinimized = false
     
-    -- Hide min bar
     TweenService:Create(MinBar, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
         Size = UDim2.new(0, 0, 0, 40),
         BackgroundTransparency = 1
@@ -664,7 +624,6 @@ local function ExpandUI()
     task.wait(0.2)
     MinBar.Visible = false
     
-    -- Show main frame
     MainFrame.Visible = true
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     MainFrame.BackgroundTransparency = 1
@@ -776,7 +735,6 @@ end)
 AddDivider()
 AddSection("Script Control")
 AddButton("Terminate Script", "⚠️ Stops all script execution", function()
-    -- Show confirmation
     local confirm = Instance.new("Frame")
     confirm.Parent = MainFrame
     confirm.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -867,20 +825,12 @@ AddLabel("Press RightShift to toggle", Color3.fromRGB(80, 80, 120))
 -- ============================================
 -- WINDOW CONTROLS
 -- ============================================
-CloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
 MinBtn.MouseButton1Click:Connect(function()
     MinimizeUI()
 end)
 
 MinExpandBtn.MouseButton1Click:Connect(function()
     ExpandUI()
-end)
-
-MinCloseBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
 end)
 
 -- ============================================
@@ -911,7 +861,6 @@ end)
 local dragging = false
 local dragInput, dragStart, startPos
 
--- Main window drag
 TopBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
@@ -931,7 +880,6 @@ TopBar.InputChanged:Connect(function(input)
     end
 end)
 
--- MinBar drag
 MinBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
@@ -976,3 +924,4 @@ print("✨ Modern UI loaded successfully!")
 print("📌 Press RightShift to toggle the UI")
 print("📌 Click '─' to minimize to bottom bar")
 print("📌 Click '□' on the bar to expand back")
+print("📌 No close button - use Terminate in Settings if needed")
