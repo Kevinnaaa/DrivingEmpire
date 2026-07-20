@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- With Teleport & Attach (Using MoveTo)
+-- Fixed: Using Actual Username (Not DisplayName)
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -820,17 +820,18 @@ local function AddDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- TELEPORT FUNCTION (Using MoveTo)
+-- TELEPORT FUNCTION (Uses Actual Username)
 -- ============================================
-local function TeleportToPlayer(targetPlayer)
-    if not targetPlayer then
+local function TeleportToPlayer(targetName)
+    if not targetName then
         print("❌ No target player selected")
         return false
     end
     
-    local target = Players:FindFirstChild(targetPlayer)
+    -- Find player by actual username
+    local target = Players:FindFirstChild(targetName)
     if not target then
-        print("❌ Player not found: " .. targetPlayer)
+        print("❌ Player not found: " .. targetName)
         return false
     end
     
@@ -854,14 +855,14 @@ local function TeleportToPlayer(targetPlayer)
         return false
     end
     
-    -- Teleport using MoveTo (from the other script)
+    -- Teleport using MoveTo
     myChar:MoveTo(targetHRP.Position)
     print("✅ Teleported to: " .. target.Name)
     return true
 end
 
 -- ============================================
--- ATTACH FUNCTION (Using MoveTo)
+-- ATTACH FUNCTION (Uses Actual Username)
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -879,15 +880,16 @@ local function StopFollowing()
     print("✅ Stopped following")
 end
 
-local function AttachToPlayer(targetPlayer)
-    if not targetPlayer then
+local function AttachToPlayer(targetName)
+    if not targetName then
         print("❌ No target player selected")
         return false
     end
     
-    local target = Players:FindFirstChild(targetPlayer)
+    -- Find player by actual username
+    local target = Players:FindFirstChild(targetName)
     if not target then
-        print("❌ Player not found: " .. targetPlayer)
+        print("❌ Player not found: " .. targetName)
         return false
     end
     
@@ -971,12 +973,13 @@ local function AttachToPlayer(targetPlayer)
 end
 
 -- ============================================
--- GET PLAYER LIST
+-- GET PLAYER LIST (Uses Actual Username)
 -- ============================================
 local function GetPlayerNames()
     local names = {}
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= player then
+            -- Use plr.Name (actual username) not plr.DisplayName
             table.insert(names, plr.Name)
         end
     end
@@ -1138,12 +1141,6 @@ AddButton("📍 Teleport to Player", "Instantly teleports you to the selected pl
         return
     end
     
-    local target = Players:FindFirstChild(selectedTargetName)
-    if not target then
-        print("❌ Player not found: " .. selectedTargetName)
-        return
-    end
-    
     if statusLabel then
         statusLabel.Text = "📍 Teleporting to " .. selectedTargetName .. "..."
         statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
@@ -1169,12 +1166,6 @@ end)
 AddButton("🔗 Attach to Player", "Follows the selected player continuously", function()
     if not selectedTargetName or selectedTargetName == "No players found" then
         print("❌ No player selected")
-        return
-    end
-    
-    local target = Players:FindFirstChild(selectedTargetName)
-    if not target then
-        print("❌ Player not found: " .. selectedTargetName)
         return
     end
     
