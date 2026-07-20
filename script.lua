@@ -1,5 +1,6 @@
 -- ============================================
--- MODERN UI - Dark Purple Theme
+-- MODERN UI - Custom Color Theme
+-- Hex: #221C35 | RGB: (152,29,151) | CMYK: (100,100,10,79)
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -15,19 +16,19 @@ local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
 -- ============================================
--- DARK PURPLE COLORS
+-- CUSTOM COLORS
 -- ============================================
-local BACKGROUND = Color3.fromRGB(20, 8, 30)      -- Very dark purple
-local TOPBAR = Color3.fromRGB(35, 15, 50)         -- Dark purple top bar
-local TABBG = Color3.fromRGB(25, 10, 38)          -- Darker purple for tabs
-local ELEMBG = Color3.fromRGB(40, 20, 55)         -- Element background
-local ELEMBGHOVER = Color3.fromRGB(55, 30, 75)    -- Element hover
-local ACCENT = Color3.fromRGB(140, 80, 200)       -- Purple accent
-local ACCENT_DARK = Color3.fromRGB(100, 50, 160)  -- Darker accent
-local BORDER = Color3.fromRGB(80, 40, 120)        -- Border color
-local TEXT = Color3.fromRGB(255, 255, 255)        -- White text
-local TEXTDIM = Color3.fromRGB(200, 180, 220)     -- Dim text
-local TEXTDARK = Color3.fromRGB(150, 130, 180)    -- Darker dim text
+local BACKGROUND = Color3.fromRGB(34, 28, 53)      -- #221C35
+local TOPBAR = Color3.fromRGB(45, 35, 65)          -- Slightly lighter
+local TABBG = Color3.fromRGB(28, 22, 45)           -- Darker tabs
+local ELEMBG = Color3.fromRGB(50, 40, 72)          -- Element background
+local ELEMBGHOVER = Color3.fromRGB(65, 50, 90)     -- Element hover
+local ACCENT = Color3.fromRGB(152, 29, 151)        -- Main accent color
+local ACCENT_DARK = Color3.fromRGB(120, 20, 120)   -- Darker accent
+local ACCENT_LIGHT = Color3.fromRGB(180, 60, 180)  -- Lighter accent
+local BORDER = Color3.fromRGB(100, 50, 130)        -- Border color
+local TEXT = Color3.fromRGB(255, 255, 255)         -- White text
+local TEXTDIM = Color3.fromRGB(200, 180, 220)      -- Dim text
 
 -- ============================================
 -- STATE
@@ -517,7 +518,7 @@ local function AddButton(text, desc, callback)
     
     btn.MouseButton1Click:Connect(callback)
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(170, 100, 220)}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = ACCENT_LIGHT}):Play()
     end)
     btn.MouseLeave:Connect(function()
         TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = ACCENT}):Play()
@@ -602,7 +603,7 @@ local function AddToggle(text, default, callback)
 end
 
 -- ============================================
--- IMPROVED DROPDOWN - More Presentable
+-- OVERLAY DROPDOWN
 -- ============================================
 local function AddDropdown(text, options, default, callback)
     local data = tabContents[currentTab]
@@ -613,7 +614,6 @@ local function AddDropdown(text, options, default, callback)
     local selected = default or options[1] or "Select"
     local isOpen = false
     
-    -- Main frame
     local frame = Instance.new("Frame")
     frame.Parent = container
     frame.BackgroundColor3 = ELEMBG
@@ -622,7 +622,8 @@ local function AddDropdown(text, options, default, callback)
     frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 50)
     RoundCorners(frame, 10)
-    frame.ClipsDescendants = true
+    frame.ClipsDescendants = false
+    frame.ZIndex = 50
     
     local elemStroke = Instance.new("UIStroke")
     elemStroke.Parent = frame
@@ -630,7 +631,6 @@ local function AddDropdown(text, options, default, callback)
     elemStroke.Thickness = 1
     elemStroke.Transparency = 0.2
     
-    -- Label
     local label = Instance.new("TextLabel")
     label.Parent = frame
     label.BackgroundTransparency = 1
@@ -641,8 +641,8 @@ local function AddDropdown(text, options, default, callback)
     label.TextColor3 = TEXTDIM
     label.TextSize = 13
     label.TextXAlignment = Enum.TextXAlignment.Left
+    label.ZIndex = 51
     
-    -- Dropdown button with better styling
     local dropdownBtn = Instance.new("TextButton")
     dropdownBtn.Parent = frame
     dropdownBtn.BackgroundColor3 = Color3.fromRGB(45, 25, 60)
@@ -656,13 +656,12 @@ local function AddDropdown(text, options, default, callback)
     dropdownBtn.TextSize = 13
     dropdownBtn.TextXAlignment = Enum.TextXAlignment.Left
     RoundCorners(dropdownBtn, 8)
+    dropdownBtn.ZIndex = 51
     
-    -- Add padding to text
     local textPad = Instance.new("UIPadding")
     textPad.Parent = dropdownBtn
     textPad.PaddingLeft = UDim.new(0, 10)
     
-    -- Arrow
     local arrow = Instance.new("TextLabel")
     arrow.Parent = dropdownBtn
     arrow.BackgroundTransparency = 1
@@ -673,37 +672,50 @@ local function AddDropdown(text, options, default, callback)
     arrow.TextColor3 = TEXTDIM
     arrow.TextSize = 12
     arrow.TextXAlignment = Enum.TextXAlignment.Center
+    arrow.ZIndex = 52
     
-    -- Dropdown list with better styling
+    -- Overlay list
     local listFrame = Instance.new("ScrollingFrame")
-    listFrame.Parent = frame
+    listFrame.Name = "DropdownOverlay"
+    listFrame.Parent = ScreenGui
     listFrame.BackgroundColor3 = Color3.fromRGB(35, 18, 50)
     listFrame.BackgroundTransparency = 0
     listFrame.BorderSizePixel = 0
-    listFrame.Position = UDim2.new(0, 115, 0, 17)
-    listFrame.Size = UDim2.new(1, -140, 0, 0)
+    listFrame.Position = UDim2.new(0, 0, 0, 0)
+    listFrame.Size = UDim2.new(0, 0, 0, 0)
     listFrame.Visible = false
     listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     listFrame.ScrollBarThickness = 4
     listFrame.ScrollBarImageColor3 = ACCENT_DARK
-    RoundCorners(listFrame, 6)
+    listFrame.ZIndex = 100
+    RoundCorners(listFrame, 8)
     
-    -- Border for list
     local listStroke = Instance.new("UIStroke")
     listStroke.Parent = listFrame
     listStroke.Color = BORDER
     listStroke.Thickness = 1
     listStroke.Transparency = 0.3
     
+    local listShadow = Instance.new("Frame")
+    listShadow.Parent = listFrame
+    listShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    listShadow.BackgroundTransparency = 0.5
+    listShadow.BorderSizePixel = 0
+    listShadow.Position = UDim2.new(0, 4, 0, 4)
+    listShadow.Size = UDim2.new(1, -8, 1, -8)
+    RoundCorners(listShadow, 8)
+    listShadow.ZIndex = -1
+    
     local listLayout = Instance.new("UIListLayout")
     listLayout.Parent = listFrame
     listLayout.Padding = UDim.new(0, 2)
     
-    -- Update list function
     local function updateList()
         for _, child in pairs(listFrame:GetChildren()) do
-            if child:IsA("TextButton") then
-                child:Destroy()
+            if child:IsA("TextButton") or child:IsA("Frame") then
+                if child ~= listShadow and child ~= listLayout then
+                    child:Destroy()
+                end
             end
         end
         
@@ -721,8 +733,8 @@ local function AddDropdown(text, options, default, callback)
             optBtn.TextSize = 13
             optBtn.TextXAlignment = Enum.TextXAlignment.Left
             RoundCorners(optBtn, 4)
+            optBtn.ZIndex = 101
             
-            -- Hover effect
             optBtn.MouseEnter:Connect(function()
                 if option ~= selected then
                     TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = ELEMBGHOVER}):Play()
@@ -734,7 +746,6 @@ local function AddDropdown(text, options, default, callback)
                 end
             end)
             
-            -- Selected style
             if option == selected then
                 optBtn.BackgroundColor3 = ACCENT
                 optBtn.TextColor3 = TEXT
@@ -746,9 +757,7 @@ local function AddDropdown(text, options, default, callback)
                 if callback then callback(option) end
                 isOpen = false
                 listFrame.Visible = false
-                frame.Size = UDim2.new(1, -30, 0, 50)
                 
-                -- Update selected style
                 for _, child in pairs(listFrame:GetChildren()) do
                     if child:IsA("TextButton") then
                         child.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
@@ -766,21 +775,51 @@ local function AddDropdown(text, options, default, callback)
         end
         
         listFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
-        listFrame.Size = UDim2.new(1, -140, 0, math.min(totalHeight, 150))
+        local listHeight = math.min(totalHeight, 200)
+        listFrame.Size = UDim2.new(0, 400, 0, listHeight)
     end
     
-    -- Toggle dropdown
     dropdownBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
-            frame.Size = UDim2.new(1, -30, 0, 50 + listFrame.Size.Y.Offset + 10)
+            local absPos = dropdownBtn.AbsolutePosition
+            local absSize = dropdownBtn.AbsoluteSize
+            
+            listFrame.Position = UDim2.new(0, absPos.X + 115, 0, absPos.Y + absSize.Y + 2)
             listFrame.Visible = true
             arrow.Text = "▲"
             updateList()
+            
+            local viewportSize = game:GetService("Workspace").CurrentCamera.ViewportSize
+            local listPos = listFrame.AbsolutePosition
+            local listSize = listFrame.AbsoluteSize
+            
+            if listPos.X + listSize.X > viewportSize.X then
+                listFrame.Position = UDim2.new(0, viewportSize.X - listSize.X - 10, listFrame.Position.Y.Scale, listFrame.Position.Y.Offset)
+            end
+            if listPos.Y + listSize.Y > viewportSize.Y then
+                listFrame.Position = UDim2.new(listFrame.Position.X.Scale, listFrame.Position.X.Offset, 0, absPos.Y - listSize.Y - 5)
+            end
         else
-            frame.Size = UDim2.new(1, -30, 0, 50)
             listFrame.Visible = false
             arrow.Text = "▼"
+        end
+    end)
+    
+    UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if isOpen then
+                local mousePos = UserInputService:GetMouseLocation()
+                local framePos = listFrame.AbsolutePosition
+                local frameSize = listFrame.AbsoluteSize
+                
+                if not (mousePos.X >= framePos.X and mousePos.X <= framePos.X + frameSize.X and
+                       mousePos.Y >= framePos.Y and mousePos.Y <= framePos.Y + frameSize.Y) then
+                    isOpen = false
+                    listFrame.Visible = false
+                    arrow.Text = "▼"
+                end
+            end
         end
     end)
     
@@ -878,7 +917,8 @@ local function DetachFromPlayer()
     isAttached = false
     attachedPlayer = nil
     
-    if attachmentConnection then        attachmentConnection:Disconnect()
+    if attachmentConnection then
+        attachmentConnection:Disconnect()
         attachmentConnection = nil
     end
     
@@ -993,7 +1033,7 @@ securityTab.select()
 
 AddSection("Teleport & Attach")
 
--- Player selection dropdown (refreshed version)
+-- Player selection dropdown
 local function RefreshDropdown()
     local names = GetPlayerNames()
     if playerDropdown then
