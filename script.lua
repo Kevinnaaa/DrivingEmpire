@@ -1,5 +1,5 @@
 -- ============================================
--- MODERN UI - Enhanced with Minimize & Transparency
+-- MODERN UI - Fixed Minimize Position
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -16,6 +16,7 @@ local player = Players.LocalPlayer
 -- ============================================
 local isMinimized = false
 local isHidden = false
+local barPosition = UDim2.new(0.5, -150, 0.95, -20) -- Bottom center
 
 -- ============================================
 -- MAIN FRAME
@@ -29,6 +30,7 @@ MainFrame.Position = UDim2.new(0.5, -320, 0.5, -220)
 MainFrame.Size = UDim2.new(0, 640, 0, 440)
 MainFrame.ClipsDescendants = true
 MainFrame.BackgroundTransparency = 0.25
+MainFrame.ZIndex = 10
 
 -- Open animation
 TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
@@ -65,7 +67,7 @@ Shadow.Size = UDim2.new(1, -16, 1, -16)
 RoundCorners(Shadow, 14)
 
 -- ============================================
--- MINIMIZED BAR
+-- MINIMIZED BAR (Positioned at bottom center)
 -- ============================================
 local MinBar = Instance.new("Frame")
 MinBar.Name = "MinBar"
@@ -73,9 +75,10 @@ MinBar.Parent = ScreenGui
 MinBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MinBar.BackgroundTransparency = 0.25
 MinBar.BorderSizePixel = 0
-MinBar.Position = UDim2.new(0.5, -150, 0.5, -20)
+MinBar.Position = UDim2.new(0.5, -150, 0.95, -20) -- Bottom center
 MinBar.Size = UDim2.new(0, 300, 0, 40)
 MinBar.Visible = false
+MinBar.ZIndex = 20
 RoundCorners(MinBar, 14)
 
 -- MinBar Shadow
@@ -111,6 +114,18 @@ MinTitle.Text = "Script Hub"
 MinTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 MinTitle.TextSize = 14
 MinTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+-- MinBar Status
+local MinStatus = Instance.new("TextLabel")
+MinStatus.Parent = MinBar
+MinStatus.BackgroundTransparency = 1
+MinStatus.Position = UDim2.new(0, 180, 0, 0)
+MinStatus.Size = UDim2.new(0, 80, 1, 0)
+MinStatus.Font = Enum.Font.Gotham
+MinStatus.Text = "● Running"
+MinStatus.TextColor3 = Color3.fromRGB(60, 200, 120)
+MinStatus.TextSize = 11
+MinStatus.TextXAlignment = Enum.TextXAlignment.Left
 
 -- MinBar Expand Button
 local MinExpandBtn = Instance.new("TextButton")
@@ -207,7 +222,7 @@ Subtitle.TextColor3 = Color3.fromRGB(150, 150, 180)
 Subtitle.TextSize = 12
 Subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
--- Minimize Button (new)
+-- Minimize Button
 local MinBtn = Instance.new("TextButton")
 MinBtn.Parent = TopBar
 MinBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 50)
@@ -234,9 +249,6 @@ CloseBtn.Text = "✕"
 CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 CloseBtn.TextSize = 16
 RoundCorners(CloseBtn, 15)
-
--- Hide Button (moved to settings)
--- We'll keep it but make it minimize instead
 
 -- Button hover effects
 local function AddHoverEffect(button)
@@ -616,14 +628,17 @@ local function MinimizeUI()
         BackgroundTransparency = 1
     }):Play()
     
-    -- Show min bar with animation
+    task.wait(0.2)
+    MainFrame.Visible = false
+    
+    -- Show min bar at bottom center
     MinBar.Visible = true
-    MinBar.Position = UDim2.new(0.5, -150, 0.5, 20)
+    MinBar.Position = UDim2.new(0.5, -150, 0.95, 20)
     MinBar.Size = UDim2.new(0, 0, 0, 40)
     MinBar.BackgroundTransparency = 1
     
     TweenService:Create(MinBar, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(0.5, -150, 0.5, -20),
+        Position = UDim2.new(0.5, -150, 0.95, -20),
         Size = UDim2.new(0, 300, 0, 40),
         BackgroundTransparency = 0.25
     }):Play()
@@ -653,6 +668,7 @@ local function ExpandUI()
     MainFrame.Visible = true
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     MainFrame.BackgroundTransparency = 1
+    MainFrame.Position = UDim2.new(0.5, -320, 0.5, -220)
     
     TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
         Size = UDim2.new(0, 640, 0, 440),
@@ -747,7 +763,7 @@ AddButton("Show UI", "Shows the interface", function()
         MainFrame.Visible = true
     end
 end)
-AddButton("Minimize UI", "Collapses to a small bar", function()
+AddButton("Minimize UI", "Collapses to a small bar at bottom", function()
     if not isMinimized then
         MinimizeUI()
     end
@@ -958,4 +974,5 @@ end)
 
 print("✨ Modern UI loaded successfully!")
 print("📌 Press RightShift to toggle the UI")
-print("📌 Click '─' to minimize to a small bar")
+print("📌 Click '─' to minimize to bottom bar")
+print("📌 Click '□' on the bar to expand back")
