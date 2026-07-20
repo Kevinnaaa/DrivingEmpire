@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- Complete Working Teleport & Attach
+-- Fixed: No HumanoidRootPart Error
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -609,7 +609,7 @@ local function AddToggle(text, default, callback)
 end
 
 -- ============================================
--- PLAYER LIST DROPDOWN (From the source script)
+-- PLAYER LIST DROPDOWN
 -- ============================================
 local function AddPlayerDropdown(text, options, default, callback)
     local data = tabContents[currentTab]
@@ -680,7 +680,6 @@ local function AddPlayerDropdown(text, options, default, callback)
     arrow.TextXAlignment = Enum.TextXAlignment.Center
     arrow.ZIndex = 52
     
-    -- SCROLLING PLAYER LIST (From the source script)
     local listFrame = Instance.new("ScrollingFrame")
     listFrame.Parent = frame
     listFrame.BackgroundColor3 = Color3.fromRGB(35, 18, 50)
@@ -705,9 +704,7 @@ local function AddPlayerDropdown(text, options, default, callback)
     listLayout.Parent = listFrame
     listLayout.Padding = UDim.new(0, 2)
     
-    -- Update list (fetches players directly like the source script)
     local function updateList()
-        -- Clear old buttons
         for _, child in pairs(listFrame:GetChildren()) do
             if child:IsA("TextButton") then
                 child:Destroy()
@@ -716,10 +713,8 @@ local function AddPlayerDropdown(text, options, default, callback)
         
         local totalHeight = 0
         
-        -- Get all players (like the source script)
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= player then
-                -- Create player card (like the source script)
                 local optBtn = Instance.new("TextButton")
                 optBtn.Parent = listFrame
                 optBtn.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
@@ -734,7 +729,6 @@ local function AddPlayerDropdown(text, options, default, callback)
                 RoundCorners(optBtn, 4)
                 optBtn.ZIndex = 101
                 
-                -- Hover effect
                 optBtn.MouseEnter:Connect(function()
                     if plr.Name ~= selected then
                         TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = ELEMBGHOVER}):Play()
@@ -746,13 +740,11 @@ local function AddPlayerDropdown(text, options, default, callback)
                     end
                 end)
                 
-                -- Highlight selected
                 if plr.Name == selected then
                     optBtn.BackgroundColor3 = ACCENT
                     optBtn.TextColor3 = TEXT
                 end
                 
-                -- Click handler
                 optBtn.MouseButton1Click:Connect(function()
                     selected = plr.Name
                     selectedPlayer = plr
@@ -762,7 +754,6 @@ local function AddPlayerDropdown(text, options, default, callback)
                     listFrame.Visible = false
                     frame.Size = UDim2.new(1, -30, 0, 50)
                     
-                    -- Update selection highlight
                     for _, child in pairs(listFrame:GetChildren()) do
                         if child:IsA("TextButton") then
                             child.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
@@ -780,7 +771,6 @@ local function AddPlayerDropdown(text, options, default, callback)
             end
         end
         
-        -- If no players found
         if totalHeight == 0 then
             local noPlayers = Instance.new("TextLabel")
             noPlayers.Parent = listFrame
@@ -799,7 +789,6 @@ local function AddPlayerDropdown(text, options, default, callback)
         listFrame.Size = UDim2.new(1, -140, 0, listHeight)
     end
     
-    -- Toggle dropdown
     dropdownBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
@@ -816,7 +805,6 @@ local function AddPlayerDropdown(text, options, default, callback)
         end
     end)
     
-    -- Close dropdown when clicking outside
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             if isOpen then
@@ -850,41 +838,70 @@ local function AddPlayerDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- TELEPORT FUNCTION (From the source script)
+-- FIXED TELEPORT FUNCTION (No HumanoidRootPart Error)
 -- ============================================
-local function TeleportToPlayer(targetPlayer)
-    if not targetPlayer then
+local function TeleportToPlayer(targetName)
+    if not targetName or targetName == "No players found" then
         print("❌ No target player selected")
         return false
     end
     
-    -- Find the target player
-    local target = Players:FindFirstChild(targetPlayer)
+    local target = Players:FindFirstChild(targetName)
     if not target then
-        print("❌ Player not found: " .. targetPlayer)
-        return false
-    end    
-    -- Get target HumanoidRootPart
-    local targetHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
-    if not targetHRP then
-        print("❌ Target has no HumanoidRootPart")
+        print("❌ Player not found: " .. targetName)
         return false
     end
     
-    -- Teleport using MoveTo (from the source script)
+    -- Wait for target character with retry
+    local targetChar = target.Character
+    local attempts = 0
+    while not targetChar and attempts < 20 do
+        task.wait(0.3)
+        targetChar = target.Character
+        attempts = attempts + 1
+    end
+    
+    if not targetChar then
+        print("❌ Target has no character - they may be dead or not spawned")
+        return false
+    end
+    
+    -- Wait for HumanoidRootPart
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    attempts = 0
+    while not targetHRP and attempts < 10 do
+        task.wait(0.3)
+        targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+        attempts = attempts + 1
+    end
+    
+    if not targetHRP then
+        print("❌ Target has no HumanoidRootPart - character may be loading")
+        return false
+    end
+    
+    -- Check if you have a character
     local myChar = player.Character
+    attempts = 0
+    while not myChar and attempts < 10 do
+        task.wait(0.3)
+        myChar = player.Character
+        attempts = attempts + 1
+    end
+    
     if not myChar then
         print("❌ You have no character")
         return false
     end
     
+    -- Teleport using MoveTo
     myChar:MoveTo(targetHRP.Position)
     print("✅ Teleported to: " .. target.Name)
     return true
 end
 
 -- ============================================
--- ATTACH FUNCTION (From the source script)
+-- FIXED ATTACH FUNCTION (No HumanoidRootPart Error)
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -903,7 +920,7 @@ local function StopFollowing()
 end
 
 local function AttachToPlayer(targetName)
-    if not targetName then
+    if not targetName or targetName == "No players found" then
         print("❌ No target player selected")
         return false
     end
@@ -914,9 +931,31 @@ local function AttachToPlayer(targetName)
         return false
     end
     
-    local targetHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
+    -- Wait for target character with retry
+    local targetChar = target.Character
+    local attempts = 0
+    while not targetChar and attempts < 20 do
+        task.wait(0.3)
+        targetChar = target.Character
+        attempts = attempts + 1
+    end
+    
+    if not targetChar then
+        print("❌ Target has no character - they may be dead or not spawned")
+        return false
+    end
+    
+    -- Wait for HumanoidRootPart
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    attempts = 0
+    while not targetHRP and attempts < 10 do
+        task.wait(0.3)
+        targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+        attempts = attempts + 1
+    end
+    
     if not targetHRP then
-        print("❌ Target has no HumanoidRootPart")
+        print("❌ Target has no HumanoidRootPart - character may be loading")
         return false
     end
     
@@ -927,7 +966,6 @@ local function AttachToPlayer(targetName)
     attachedPlayer = target
     isAttached = true
     
-    -- Death detection (from the source script)
     local function onPlayerDeath()
         print("⚠️ Player died - detaching...")
         StopFollowing()
@@ -972,7 +1010,6 @@ local function AttachToPlayer(targetName)
             return
         end
         
-        -- Attach using MoveTo (from the source script)
         myChar:MoveTo(targetHRP.Position)
     end)
     
@@ -1156,7 +1193,7 @@ AddButton("📍 Teleport to Player", "Instantly teleports you to the selected pl
             statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
         end
     else
-        statusLabel.Text = "❌ Failed to teleport"
+        statusLabel.Text = "❌ Failed to teleport - target may be dead"
         statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
 end)
