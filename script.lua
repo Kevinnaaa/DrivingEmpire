@@ -1,5 +1,5 @@
 -- ============================================
--- RAYFIELD UI - Working Teleport & Attach
+-- RAYFIELD UI - Teleport & Attach (10 Studs)
 -- ============================================
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -17,6 +17,7 @@ end
 -- ============================================
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 
 -- ============================================
@@ -26,18 +27,14 @@ local isAttached = false
 local attachedPlayer = nil
 local attachmentConnection = nil
 local selectedTarget = nil
+local ATTACH_DISTANCE = 10
 
 -- ============================================
--- TELEPORT FUNCTION
+-- TELEPORT FUNCTION (FIXED)
 -- ============================================
 local function TeleportToPlayer(targetPlayer)
-    if not targetPlayer then
-        print("❌ No target player selected")
-        return false
-    end
-    
-    if targetPlayer == "No players found" then
-        print("❌ No players found in the game")
+    if not targetPlayer or targetPlayer == "No players found" then
+        print("❌ No valid player selected")
         return false
     end
     
@@ -47,17 +44,26 @@ local function TeleportToPlayer(targetPlayer)
         return false
     end
     
-    if not target.Character then
-        print("❌ Target has no character: " .. targetPlayer)
-        return false
+    -- Get target character
+    local targetChar = target.Character
+    if not targetChar then
+        -- Wait for character if it doesn't exist
+        target.CharacterAdded:Wait()
+        task.wait(0.5)
+        targetChar = target.Character
+        if not targetChar then
+            print("❌ Target character failed to load")
+            return false
+        end
     end
     
-    local targetHRP = target.Character:FindFirstChild("HumanoidRootPart")
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
     if not targetHRP then
         print("❌ Target has no HumanoidRootPart")
         return false
     end
     
+    -- Get your character
     local myChar = player.Character
     if not myChar then
         print("❌ You have no character")
@@ -70,14 +76,47 @@ local function TeleportToPlayer(targetPlayer)
         return false
     end
     
-    -- Teleport to target (slightly above to avoid clipping)
-    myHRP.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
-    print("✅ Teleported to: " .. target.Name)
+    -- Calculate position 10 studs away from target
+    local targetPos = targetHRP.Position
+    local myPos = myHRP.Position
+    
+    -- Get direction from target to player
+    local direction = (myPos - targetPos).Unit
+    
+    -- If player is too close, teleport behind target
+    if (myPos - targetPos).Magnitude < 5 then
+        direction = (targetHRP.CFrame.LookVector * -1).Unit
+    end
+    
+    -- Position 10 studs away
+    local newPos = targetPos + direction * ATTACH_DISTANCE
+    
+    -- Check for ground to avoid going underground
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {myChar, targetChar}
+    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+    
+    local rayOrigin = newPos + Vector3.new(0, 50, 0)
+    local rayDirection = Vector3.new(0, -100, 0)
+    local result = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+    
+    if result then
+        local groundPos = result.Position
+        if (groundPos - newPos).Magnitude < 10 then
+            newPos = groundPos + Vector3.new(0, 3, 0)
+        end
+    end
+    
+    -- Teleport
+    local cframe = CFrame.new(newPos, targetHRP.Position)
+    myHRP.CFrame = cframe
+    
+    print("✅ Teleported to: " .. target.Name .. " (10 studs away)")
     return true
 end
 
 -- ============================================
--- ATTACH FUNCTION
+-- ATTACH FUNCTION (10 Studs Distance)
 -- ============================================
 local function AttachToPlayer(targetPlayer)
     if not targetPlayer or targetPlayer == "No players found" then
@@ -104,6 +143,9 @@ local function AttachToPlayer(targetPlayer)
     attachedPlayer = target
     isAttached = true
     
+    -- First teleport to the player
+    TeleportToPlayer(targetPlayer)
+    
     -- Create attachment connection
     attachmentConnection = RunService.Heartbeat:Connect(function()
         if not isAttached or not attachedPlayer then
@@ -127,11 +169,50 @@ local function AttachToPlayer(targetPlayer)
         local targetHRP = attachedPlayer.Character:FindFirstChild("HumanoidRootPart")
         
         if myHRP and targetHRP then
-            myHRP.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
+            local targetPos = targetHRP.Position
+            local myPos = myHRP.Position
+            
+            -- Check current distance
+            local currentDistance = (myPos - targetPos).Magnitude
+            
+            -- If too close or too far, reposition
+            if currentDistance < (ATTACH_DISTANCE - 2) or currentDistance > (ATTACH_DISTANCE + 2) then
+                local direction = (myPos - targetPos).Unit
+                
+                if currentDistance < 3 then
+                    direction = (targetHRP.CFrame.LookVector * -1).Unit
+                end
+                
+                local newPos = targetPos + direction * ATTACH_DISTANCE
+                
+                -- Check for ground
+                local raycastParams = RaycastParams.new()
+                raycastParams.FilterDescendantsInstances = {myChar, attachedPlayer.Character}
+                raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                
+                local rayOrigin = newPos + Vector3.new(0, 50, 0)
+                local rayDirection = Vector3.new(0, -100, 0)
+                local result = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
+                
+                if result then
+                    local groundPos = result.Position
+                    if (groundPos - newPos).Magnitude < 10 then
+                        newPos = groundPos + Vector3.new(0, 3, 0)
+                    end
+                end
+                
+                -- Teleport to new position
+                local cframe = CFrame.new(newPos, targetHRP.Position)
+                myHRP.CFrame = cframe
+            end
+            
+            -- Always face the target
+            local lookAtCFrame = CFrame.lookAt(myHRP.Position, targetHRP.Position)
+            myHRP.CFrame = lookAtCFrame
         end
     end)
     
-    print("✅ Attached to: " .. target.Name)
+    print("✅ Attached to: " .. target.Name .. " (10 studs away)")
     return true
 end
 
@@ -222,19 +303,25 @@ MainTab:CreateButton({
 })
 
 -- ============================================
--- SECURITY TAB (Teleport & Attach)
+-- SECURITY TAB
 -- ============================================
 SecurityTab:CreateSection("Teleport & Attach")
 
--- Player selection dropdown (refreshes list)
+-- Player selection dropdown
 local function RefreshDropdown()
     local names = GetPlayerNames()
-    Dropdown:Refresh(names)
+    if Dropdown and Dropdown.Refresh then
+        Dropdown:Refresh(names)
+    end
     if #names > 0 and names[1] ~= "No players found" then
-        Dropdown:Set({names[1]})
+        if Dropdown and Dropdown.Set then
+            Dropdown:Set({names[1]})
+        end
         selectedTarget = names[1]
     else
-        Dropdown:Set({"No players found"})
+        if Dropdown and Dropdown.Set then
+            Dropdown:Set({"No players found"})
+        end
         selectedTarget = "No players found"
     end
 end
@@ -248,9 +335,8 @@ local Dropdown = SecurityTab:CreateDropdown({
         selectedTarget = Options[1]
         print("📌 Selected:", selectedTarget)
         
-        -- Update status label
         if isAttached and attachedPlayer and attachedPlayer.Name == selectedTarget then
-            StatusLabel:Set("📌 Status: Attached to " .. selectedTarget)
+            StatusLabel:Set("📌 Status: Attached to " .. selectedTarget .. " (10 studs)")
         else
             StatusLabel:Set("📌 Status: Selected " .. selectedTarget)
         end
@@ -281,11 +367,11 @@ SecurityTab:CreateButton({
         local success = TeleportToPlayer(selectedTarget)
         
         if success then
-            StatusLabel:Set("✅ Teleported to " .. selectedTarget)
+            StatusLabel:Set("✅ Teleported to " .. selectedTarget .. " (10 studs)")
             Rayfield:Notify({
                 Title = "Success",
-                Content = "Teleported to " .. selectedTarget,
-                Duration = 2
+                Content = "Teleported to " .. selectedTarget .. " (10 studs away)",
+                Duration = 3
             })
         else
             StatusLabel:Set("❌ Failed to teleport")
@@ -300,7 +386,7 @@ SecurityTab:CreateButton({
 
 -- Attach Button
 SecurityTab:CreateButton({
-    Name = "🔗 Attach to Player",
+    Name = "🔗 Attach to Player (10 studs)",
     Callback = function()
         if not selectedTarget or selectedTarget == "No players found" then
             print("❌ No player selected")
@@ -319,11 +405,11 @@ SecurityTab:CreateButton({
         local success = AttachToPlayer(selectedTarget)
         
         if success then
-            StatusLabel:Set("🔗 Attached to " .. selectedTarget)
+            StatusLabel:Set("🔗 Attached to " .. selectedTarget .. " (10 studs)")
             Rayfield:Notify({
                 Title = "Success",
-                Content = "Attached to " .. selectedTarget,
-                Duration = 2
+                Content = "Attached to " .. selectedTarget .. " (10 studs away)",
+                Duration = 3
             })
         else
             StatusLabel:Set("❌ Failed to attach")
@@ -364,6 +450,9 @@ SecurityTab:CreateButton({
 
 SecurityTab:CreateDivider()
 
+-- Distance Display
+SecurityTab:CreateLabel("📏 Attach Distance: 10 studs", 0, Color3.fromRGB(150, 200, 255), false)
+
 -- Refresh Player List Button
 SecurityTab:CreateButton({
     Name = "🔄 Refresh Player List",
@@ -376,31 +465,6 @@ SecurityTab:CreateButton({
         })
     end
 })
-
--- Auto-refresh player list every 5 seconds
-task.spawn(function()
-    while true do
-        task.wait(5)
-        if not Rayfield then break end
-        -- Only refresh if dropdown exists and no one is selected
-        if Dropdown and selectedTarget then
-            local currentNames = GetPlayerNames()
-            -- Check if current selected still exists
-            local stillExists = false
-            for _, name in ipairs(currentNames) do
-                if name == selectedTarget then
-                    stillExists = true
-                    break
-                end
-            end
-            if not stillExists and selectedTarget ~= "No players found" and #currentNames > 0 then
-                selectedTarget = currentNames[1]
-                Dropdown:Set({selectedTarget})
-                StatusLabel:Set("📌 Status: Selected " .. selectedTarget)
-            end
-        end
-    end
-end)
 
 -- ============================================
 -- VISUALS TAB
@@ -459,21 +523,19 @@ VisualsTab:CreateButton({
 })
 
 -- ============================================
--- SETTINGS TAB (Only Terminate)
+-- SETTINGS TAB
 -- ============================================
 SettingsTab:CreateSection("Script Control")
 
 SettingsTab:CreateButton({
     Name = "⚠️ Terminate Script",
     Callback = function()
-        -- Confirm before terminating
         Rayfield:Notify({
             Title = "⚠️ Terminating...",
             Content = "Script will be terminated!",
             Duration = 2
         })
         task.wait(1)
-        -- Clean up attachment
         if isAttached then
             DetachFromPlayer()
         end
@@ -487,21 +549,25 @@ SettingsTab:CreateLabel("Made with ❤️ by QueezZy123", 0, Color3.fromRGB(100,
 SettingsTab:CreateLabel("Press K to toggle UI", 0, Color3.fromRGB(80, 80, 120), false)
 
 -- ============================================
--- CLEANUP ON SCRIPT END
+-- CLEANUP
 -- ============================================
-game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function()
-    -- If attached, re-attach after respawn
+player.CharacterAdded:Connect(function()
     if isAttached and attachedPlayer then
-        task.wait(0.5)
+        task.wait(1)
         if attachedPlayer and attachedPlayer.Character then
-            -- Re-attach after respawn
             local targetHRP = attachedPlayer.Character:FindFirstChild("HumanoidRootPart")
             if targetHRP then
                 local myChar = player.Character
                 if myChar then
                     local myHRP = myChar:FindFirstChild("HumanoidRootPart")
                     if myHRP then
-                        myHRP.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
+                        local targetPos = targetHRP.Position
+                        local direction = (myHRP.Position - targetPos).Unit
+                        if (myHRP.Position - targetPos).Magnitude < 3 then
+                            direction = (targetHRP.CFrame.LookVector * -1).Unit
+                        end
+                        local newPos = targetPos + direction * ATTACH_DISTANCE
+                        myHRP.CFrame = CFrame.new(newPos, targetHRP.Position)
                     end
                 end
             end
@@ -519,7 +585,7 @@ Rayfield:LoadConfiguration()
 -- ============================================
 Rayfield:Notify({
     Title = "Success",
-    Content = "UI Loaded Successfully!",
+    Content = "UI Loaded Successfully! (10 studs distance)",
     Duration = 3
 })
 
@@ -527,4 +593,4 @@ print("✨ Modern UI loaded successfully!")
 print("📌 Script by QueezZy123")
 print("🎮 Games: Driving Empire")
 print("📌 Press K to toggle the UI")
-print("📌 Select a player and use Teleport/Attach/Detach")
+print("📏 Attach Distance: 10 studs")
