@@ -1,12 +1,22 @@
--- Rayfield UI Loader Script (No Key System)
--- This script fetches and loads the Rayfield UI library
+-- Rayfield UI Loader Script (Using Sirius.menu)
+-- This script fetches and loads the Rayfield UI library from sirius.menu
 
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -- Check if Rayfield loaded successfully
 if not Rayfield then
-    warn("Failed to load Rayfield UI")
-    return
+    warn("Failed to load Rayfield UI from sirius.menu")
+    -- Try alternative source if first fails
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+    end)
+    if success and result then
+        Rayfield = result
+        print("Loaded Rayfield from GitHub backup")
+    else
+        warn("All sources failed to load Rayfield!")
+        return
+    end
 end
 
 -- Create a new window (No Key System)
@@ -24,7 +34,7 @@ local Window = Rayfield:CreateWindow({
         Invite = "noinvite",
         RememberJoins = true
     },
-    KeySystem = false -- Key system is disabled
+    KeySystem = false
 })
 
 -- Create a main tab
@@ -140,27 +150,41 @@ SettingsTab:CreateButton({
     Callback = function()
         Rayfield:Destroy()
         wait(0.5)
-        local NewRayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
-        print("UI reloaded")
+        local NewRayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+        if NewRayfield then
+            print("UI reloaded successfully!")
+        else
+            warn("Failed to reload UI")
+        end
     end
 })
 
--- Optional: Custom notification example
+-- Add buttons to show/hide UI
+SettingsTab:CreateButton({
+    Name = "Hide UI",
+    Callback = function()
+        Window:Hide()
+        print("UI hidden")
+    end
+})
+
+SettingsTab:CreateButton({
+    Name = "Show UI",
+    Callback = function()
+        Window:Show()
+        print("UI shown")
+    end
+})
+
+-- Custom notification example
 Rayfield:Notify({
     Title = "Success",
-    Content = "UI Loaded Successfully!",
+    Content = "UI Loaded Successfully from sirius.menu!",
     Duration = 3,
     Image = 4483362458
 })
 
--- Optional: Function to check if UI is still loaded
-local function CheckUI()
-    if not Rayfield then
-        warn("Rayfield UI is not loaded!")
-    else
-        print("Rayfield UI is loaded and ready")
-    end
-end
+print("Rayfield UI script loaded successfully from sirius.menu!")
 
 -- Optional: Cleanup function
 local function Cleanup()
@@ -170,4 +194,9 @@ local function Cleanup()
     end
 end
 
-print("Rayfield UI script loaded successfully!")
+-- Auto-run cleanup when script is stopped (optional)
+-- game:GetService("RunService").Stepped:Connect(function()
+--     if not game:IsLoaded() then
+--         Cleanup()
+--     end
+-- end)
