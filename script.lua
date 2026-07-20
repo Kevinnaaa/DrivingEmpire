@@ -1,5 +1,5 @@
 -- ============================================
--- MODERN UI - Custom Functions (Teleport & Attach)
+-- MODERN UI - Persistent Tab Content (No Clearing)
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -33,7 +33,7 @@ local function RoundCorners(frame, radius)
 end
 
 -- ============================================
--- MAIN FRAME - FULLY ROUNDED
+-- MAIN FRAME
 -- ============================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
@@ -257,6 +257,9 @@ Content.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 80)
 local currentTab = nil
 local contentY = 15
 
+-- Table to store tab content frames
+local tabContents = {}
+
 -- ============================================
 -- UI ELEMENTS
 -- ============================================
@@ -293,36 +296,71 @@ local function CreateTab(name, icon)
         end
     end)
     
+    -- Create a container for this tab's content
+    local tabContainer = Instance.new("Frame")
+    tabContainer.Name = name .. "Content"
+    tabContainer.Parent = Content
+    tabContainer.BackgroundTransparency = 1
+    tabContainer.Size = UDim2.new(1, 0, 0, 0)
+    tabContainer.Visible = false
+    tabContainer.ZIndex = 15
+    
+    -- Store reference
+    tabContents[name] = {
+        container = tabContainer,
+        yPos = 15,
+        btn = btn,
+        indicator = indicator
+    }
+    
     local function select()
         if currentTab == name then return end
         currentTab = name
         
-        Content:ClearAllChildren()
-        contentY = 15
-        
-        for _, child in pairs(TabContainer:GetChildren()) do
-            if child:IsA("TextButton") then
-                child.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-                child.TextColor3 = Color3.fromRGB(180, 180, 200)
-                local ind = child:FindFirstChildWhichIsA("Frame")
-                if ind then ind.Visible = false end
-            end
+        -- Hide all tab contents
+        for _, data in pairs(tabContents) do
+            data.container.Visible = false
+            data.btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+            data.btn.TextColor3 = Color3.fromRGB(180, 180, 200)
+            data.indicator.Visible = false
         end
         
-        btn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        indicator.Visible = true
+        -- Show selected tab
+        local data = tabContents[name]
+        if data then
+            data.container.Visible = true
+            data.btn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+            data.btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            data.indicator.Visible = true
+            
+            -- Update canvas size
+            task.wait(0.05)
+            Content.CanvasSize = UDim2.new(0, 0, 0, data.yPos + 30)
+        end
     end
     
     btn.MouseButton1Click:Connect(select)
-    return {select = select}
+    
+    return {
+        select = select,
+        container = tabContainer,
+        getY = function() return tabContents[name].yPos end,
+        setY = function(val) tabContents[name].yPos = val end
+    }
 end
 
+-- Functions that work with the current tab's container
 local function AddSection(text)
+    local data = tabContents[currentTab]
+    if not data then return end
+    
+    local container = data.container
+    local y = data.yPos
+    
     local frame = Instance.new("Frame")
-    frame.Parent = Content
+    frame.Parent = container
     frame.BackgroundTransparency = 1
-    frame.Position = UDim2.new(0, 15, 0, contentY)
+    frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 30)
     
     local label = Instance.new("TextLabel")
@@ -335,27 +373,40 @@ local function AddSection(text)
     label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
     
-    contentY = contentY + 38
+    data.yPos = data.yPos + 38
     return frame
 end
 
 local function AddDivider()
+    local data = tabContents[currentTab]
+    if not data then return end
+    
+    local container = data.container
+    local y = data.yPos
+    
     local frame = Instance.new("Frame")
-    frame.Parent = Content
+    frame.Parent = container
     frame.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
     frame.BackgroundTransparency = 0.5
     frame.BorderSizePixel = 0
-    frame.Position = UDim2.new(0, 20, 0, contentY)
+    frame.Position = UDim2.new(0, 20, 0, y)
     frame.Size = UDim2.new(1, -40, 0, 1)
-    contentY = contentY + 10
+    
+    data.yPos = data.yPos + 10
     return frame
 end
 
 local function AddLabel(text, color, size)
+    local data = tabContents[currentTab]
+    if not data then return end
+    
+    local container = data.container
+    local y = data.yPos
+    
     local frame = Instance.new("Frame")
-    frame.Parent = Content
+    frame.Parent = container
     frame.BackgroundTransparency = 1
-    frame.Position = UDim2.new(0, 15, 0, contentY)
+    frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 30)
     
     local label = Instance.new("TextLabel")
@@ -368,15 +419,21 @@ local function AddLabel(text, color, size)
     label.TextSize = size or 16
     label.TextXAlignment = Enum.TextXAlignment.Center
     
-    contentY = contentY + 38
+    data.yPos = data.yPos + 38
     return frame
 end
 
 local function AddSmallLabel(text, color)
+    local data = tabContents[currentTab]
+    if not data then return end
+    
+    local container = data.container
+    local y = data.yPos
+    
     local frame = Instance.new("Frame")
-    frame.Parent = Content
+    frame.Parent = container
     frame.BackgroundTransparency = 1
-    frame.Position = UDim2.new(0, 15, 0, contentY)
+    frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 25)
     
     local label = Instance.new("TextLabel")
@@ -389,17 +446,23 @@ local function AddSmallLabel(text, color)
     label.TextSize = 12
     label.TextXAlignment = Enum.TextXAlignment.Center
     
-    contentY = contentY + 30
+    data.yPos = data.yPos + 30
     return frame
 end
 
 local function AddButton(text, desc, callback)
+    local data = tabContents[currentTab]
+    if not data then return end
+    
+    local container = data.container
+    local y = data.yPos
+    
     local frame = Instance.new("Frame")
-    frame.Parent = Content
+    frame.Parent = container
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
-    frame.Position = UDim2.new(0, 15, 0, contentY)
+    frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 50)
     RoundCorners(frame, 10)
     
@@ -454,19 +517,24 @@ local function AddButton(text, desc, callback)
         TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 80, 200)}):Play()
     end)
     
-    contentY = contentY + 58
+    data.yPos = data.yPos + 58
     return frame
 end
 
 local function AddToggle(text, default, callback)
+    local data = tabContents[currentTab]
+    if not data then return end
+    
+    local container = data.container
+    local y = data.yPos
     local state = default or false
     
     local frame = Instance.new("Frame")
-    frame.Parent = Content
+    frame.Parent = container
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
-    frame.Position = UDim2.new(0, 15, 0, contentY)
+    frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 45)
     RoundCorners(frame, 10)
     
@@ -523,20 +591,25 @@ local function AddToggle(text, default, callback)
     end)
     
     update(state)
-    contentY = contentY + 53
+    data.yPos = data.yPos + 53
     return frame
 end
 
 local function AddDropdown(text, options, default, callback)
+    local data = tabContents[currentTab]
+    if not data then return end
+    
+    local container = data.container
+    local y = data.yPos
     local selected = default or options[1] or "Select"
     local isOpen = false
     
     local frame = Instance.new("Frame")
-    frame.Parent = Content
+    frame.Parent = container
     frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
-    frame.Position = UDim2.new(0, 15, 0, contentY)
+    frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 45)
     RoundCorners(frame, 10)
     frame.ClipsDescendants = true
@@ -679,7 +752,7 @@ local function AddDropdown(text, options, default, callback)
         end
     end)
     
-    contentY = contentY + 55
+    data.yPos = data.yPos + 55
     return {set = function(val) selected = val; dropdownBtn.Text = val; if callback then callback(val) end end}
 end
 
@@ -710,13 +783,11 @@ local function TeleportToPlayer(targetPlayer)
         return
     end
     
-    -- Teleport to target
     myHRP.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
     print("✅ Teleported to: " .. targetPlayer.Name)
 end
 
 local function AttachToPlayer(targetPlayer)
-    -- Detach first if already attached
     if isAttached then
         DetachFromPlayer()
     end
@@ -735,7 +806,6 @@ local function AttachToPlayer(targetPlayer)
     attachedPlayer = targetPlayer
     isAttached = true
     
-    -- Create attachment connection
     if attachmentConnection then
         attachmentConnection:Disconnect()
         attachmentConnection = nil
@@ -842,7 +912,6 @@ local settingsTab = CreateTab("Settings", "⚙️")
 -- ============================================
 mainTab.select()
 
--- Welcome Section
 AddLabel("═══════════════════════════════════", Color3.fromRGB(60, 80, 200), 14)
 AddLabel("✨ Script by QueezZy123 (Maryyy) ✨", Color3.fromRGB(255, 200, 100), 18)
 AddLabel("🎮 Games: Driving Empire", Color3.fromRGB(150, 200, 255), 14)
@@ -861,7 +930,7 @@ AddButton("Print Hello", "Test the script is working", function()
 end)
 
 -- ============================================
--- SECURITY TAB CONTENT (Teleport & Attach)
+-- SECURITY TAB CONTENT
 -- ============================================
 securityTab.select()
 
@@ -887,7 +956,6 @@ local playerDropdown = AddDropdown("Select Player", GetPlayerNames(), GetPlayerN
     selectedTargetName = value
     print("📌 Selected:", value)
     
-    -- Update status label if it exists
     local statusLabel = Content:FindFirstChild("StatusLabel")
     if statusLabel and statusLabel:IsA("TextLabel") then
         if isAttached and attachedPlayer and attachedPlayer.Name == value then
@@ -900,12 +968,13 @@ local playerDropdown = AddDropdown("Select Player", GetPlayerNames(), GetPlayerN
     end
 end)
 
--- Status label (will be updated)
 AddDivider()
+
+-- Status label
 local statusFrame = Instance.new("Frame")
-statusFrame.Parent = Content
+statusFrame.Parent = securityTab.container
 statusFrame.BackgroundTransparency = 1
-statusFrame.Position = UDim2.new(0, 15, 0, contentY)
+statusFrame.Position = UDim2.new(0, 15, 0, securityTab.getY())
 statusFrame.Size = UDim2.new(1, -30, 0, 30)
 
 local statusLabel = Instance.new("TextLabel")
@@ -918,7 +987,7 @@ statusLabel.Text = "📌 Status: No player selected"
 statusLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
 statusLabel.TextSize = 13
 statusLabel.TextXAlignment = Enum.TextXAlignment.Center
-contentY = contentY + 35
+securityTab.setY(securityTab.getY() + 35)
 
 AddDivider()
 
@@ -935,7 +1004,6 @@ AddButton("📍 Teleport to Player", "Instantly teleports you to the selected pl
         return
     end
     
-    -- Update status
     if statusLabel then
         statusLabel.Text = "📍 Teleporting to " .. selectedTargetName .. "..."
         statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
@@ -968,7 +1036,6 @@ AddButton("🔗 Attach to Player", "Follows the selected player continuously", f
         return
     end
     
-    -- Update status
     if statusLabel then
         statusLabel.Text = "🔗 Attaching to " .. selectedTargetName .. "..."
         statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
@@ -1141,6 +1208,11 @@ end)
 AddDivider()
 AddSmallLabel("Made with ❤️ by QueezZy123", Color3.fromRGB(100, 100, 140))
 AddSmallLabel("Click '─' to minimize", Color3.fromRGB(80, 80, 120))
+
+-- ============================================
+-- SELECT DEFAULT TAB (Main)
+-- ============================================
+mainTab.select()
 
 -- ============================================
 -- WINDOW CONTROLS
