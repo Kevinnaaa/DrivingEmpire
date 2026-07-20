@@ -18,7 +18,6 @@ end
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
-local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 -- ============================================
@@ -33,7 +32,7 @@ local Dropdown = nil
 local StatusLabel = nil
 
 -- ============================================
--- TELEPORT FUNCTION (FULLY WORKING)
+-- TELEPORT FUNCTION (FULLY FIXED)
 -- ============================================
 local function TeleportToPlayer(targetPlayer)
     if not targetPlayer or targetPlayer == "No players found" then
@@ -47,14 +46,18 @@ local function TeleportToPlayer(targetPlayer)
         return false
     end
     
-    -- Get target character with retry
+    -- ============================================
+    -- GET TARGET CHARACTER WITH RETRY
+    -- ============================================
     local targetChar = target.Character
     if not targetChar then
-        local attempts = 0
-        while not targetChar and attempts < 10 do
+        print("⏳ Waiting for target character to load...")
+        for i = 1, 25 do
             task.wait(0.2)
             targetChar = target.Character
-            attempts = attempts + 1
+            if targetChar then
+                break
+            end
         end
         if not targetChar then
             print("❌ Target character failed to load")
@@ -62,49 +65,72 @@ local function TeleportToPlayer(targetPlayer)
         end
     end
     
+    task.wait(0.2)
+    
+    -- ============================================
+    -- GET TARGET HRP
+    -- ============================================
     local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
     if not targetHRP then
         print("❌ Target has no HumanoidRootPart")
         return false
     end
     
-    -- Get your character with retry
+    -- ============================================
+    -- GET YOUR CHARACTER WITH RETRY
+    -- ============================================
     local myChar = player.Character
     if not myChar then
-        local attempts = 0
-        while not myChar and attempts < 10 do
+        print("⏳ Waiting for your character to load...")
+        for i = 1, 25 do
             task.wait(0.2)
             myChar = player.Character
-            attempts = attempts + 1
+            if myChar then
+                break
+            end
         end
         if not myChar then
-            print("❌ You have no character")
+            print("❌ Your character failed to load")
             return false
         end
     end
     
+    task.wait(0.1)
+    
+    -- ============================================
+    -- GET YOUR HRP
+    -- ============================================
     local myHRP = myChar:FindFirstChild("HumanoidRootPart")
     if not myHRP then
         print("❌ You have no HumanoidRootPart")
         return false
     end
     
-    -- Calculate position 10 studs away from target
+    -- ============================================
+    -- CALCULATE POSITION (10 Studs Away)
+    -- ============================================
     local targetPos = targetHRP.Position
     local myPos = myHRP.Position
     
     -- Get direction from target to player
     local direction = (myPos - targetPos).Unit
     
-    -- If player is too close or direction is invalid, teleport behind target
-    if (myPos - targetPos).Magnitude < 5 or direction.Magnitude < 0.1 then
+    -- If direction is invalid, use a random direction
+    if direction.Magnitude < 0.1 then
+        direction = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)).Unit
+    end
+    
+    -- If player is too close, teleport behind target
+    if (myPos - targetPos).Magnitude < 5 then
         direction = (targetHRP.CFrame.LookVector * -1).Unit
     end
     
     -- Position 10 studs away
     local newPos = targetPos + direction * ATTACH_DISTANCE
     
-    -- Make sure we don't go underground
+    -- ============================================
+    -- GROUND CHECK (Prevent Underground)
+    -- ============================================
     local raycastParams = RaycastParams.new()
     raycastParams.FilterDescendantsInstances = {myChar, targetChar}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
@@ -120,16 +146,25 @@ local function TeleportToPlayer(targetPlayer)
         end
     end
     
-    -- Teleport
-    local cframe = CFrame.new(newPos, targetHRP.Position)
-    myHRP.CFrame = cframe
+    -- ============================================
+    -- PERFORM TELEPORT
+    -- ============================================
+    local success, err = pcall(function()
+        local cframe = CFrame.new(newPos, targetHRP.Position)
+        myHRP.CFrame = cframe
+    end)
     
-    print("✅ Teleported to: " .. target.Name .. " (10 studs away)")
-    return true
+    if success then
+        print("✅ Teleported to: " .. target.Name .. " (10 studs away)")
+        return true
+    else
+        print("❌ Teleport failed:", err)
+        return false
+    end
 end
 
 -- ============================================
--- ATTACH FUNCTION (FULLY WORKING)
+-- ATTACH FUNCTION (FULLY FIXED)
 -- ============================================
 local function AttachToPlayer(targetPlayer)
     if not targetPlayer or targetPlayer == "No players found" then
@@ -143,14 +178,16 @@ local function AttachToPlayer(targetPlayer)
         return false
     end
     
-    -- Wait for target character
+    -- Wait for target character with retry
     local targetChar = target.Character
     if not targetChar then
-        local attempts = 0
-        while not targetChar and attempts < 10 do
+        print("⏳ Waiting for target character to load...")
+        for i = 1, 25 do
             task.wait(0.2)
             targetChar = target.Character
-            attempts = attempts + 1
+            if targetChar then
+                break
+            end
         end
         if not targetChar then
             print("❌ Target has no character")
@@ -209,12 +246,10 @@ local function AttachToPlayer(targetPlayer)
             if currentDistance < (ATTACH_DISTANCE - 1) or currentDistance > (ATTACH_DISTANCE + 1) then
                 local direction = (myPos - targetPos).Unit
                 
-                -- If player is too close or direction is invalid, move behind target
                 if currentDistance < 3 or direction.Magnitude < 0.1 then
                     direction = (targetHRP.CFrame.LookVector * -1).Unit
                 end
                 
-                -- Position at exact 10 studs distance
                 local newPos = targetPos + direction * ATTACH_DISTANCE
                 
                 -- Check for ground
@@ -233,7 +268,6 @@ local function AttachToPlayer(targetPlayer)
                     end
                 end
                 
-                -- Teleport to new position
                 local cframe = CFrame.new(newPos, targetHRP.Position)
                 myHRP.CFrame = cframe
             end
