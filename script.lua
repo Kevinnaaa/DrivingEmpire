@@ -1,10 +1,12 @@
 -- ============================================
--- MODERN UI - No Close Button (Minimize Only) - VISIBLE COLORS
+-- MODERN UI - No Close Button (Minimize Only) - FULLY OPAQUE
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "ModernUI"
 ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -19,23 +21,19 @@ local isHidden = false
 local barPosition = UDim2.new(0.5, -150, 0.95, -20)
 
 -- ============================================
--- MAIN FRAME
+-- MAIN FRAME - FULLY OPAQUE
 -- ============================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 45) -- Lighter dark
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Position = UDim2.new(0.5, -320, 0.5, -220)
 MainFrame.Size = UDim2.new(0, 640, 0, 440)
 MainFrame.ClipsDescendants = true
-MainFrame.BackgroundTransparency = 0
+MainFrame.BackgroundTransparency = 0 -- FULLY OPAQUE
 MainFrame.ZIndex = 10
-
--- Open animation
-TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-    BackgroundTransparency = 0
-}):Play()
+MainFrame.Visible = true
 
 -- Corner rounding
 local function RoundCorners(frame, radius)
@@ -45,31 +43,31 @@ local function RoundCorners(frame, radius)
 end
 RoundCorners(MainFrame, 14)
 
--- Border/Stroke
+-- Border for visibility
 local Stroke = Instance.new("UIStroke")
 Stroke.Parent = MainFrame
-Stroke.Color = Color3.fromRGB(60, 60, 80)
+Stroke.Color = Color3.fromRGB(80, 80, 120)
 Stroke.Thickness = 1
-Stroke.Transparency = 0.5
+Stroke.Transparency = 0.3
 
 -- Shadow
 local Shadow = Instance.new("Frame")
 Shadow.Parent = MainFrame
 Shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.BackgroundTransparency = 0.4
+Shadow.BackgroundTransparency = 0.6
 Shadow.BorderSizePixel = 0
 Shadow.Position = UDim2.new(0, 8, 0, 8)
 Shadow.Size = UDim2.new(1, -16, 1, -16)
 RoundCorners(Shadow, 14)
 
 -- ============================================
--- MINIMIZED BAR
+-- MINIMIZED BAR - FULLY OPAQUE
 -- ============================================
 local MinBar = Instance.new("Frame")
 MinBar.Name = "MinBar"
 MinBar.Parent = ScreenGui
-MinBar.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-MinBar.BackgroundTransparency = 0
+MinBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MinBar.BackgroundTransparency = 0 -- FULLY OPAQUE
 MinBar.BorderSizePixel = 0
 MinBar.Position = UDim2.new(0.5, -150, 0.95, -20)
 MinBar.Size = UDim2.new(0, 300, 0, 40)
@@ -80,15 +78,15 @@ RoundCorners(MinBar, 14)
 -- MinBar Border
 local MinStroke = Instance.new("UIStroke")
 MinStroke.Parent = MinBar
-MinStroke.Color = Color3.fromRGB(60, 60, 80)
+MinStroke.Color = Color3.fromRGB(80, 80, 120)
 MinStroke.Thickness = 1
-MinStroke.Transparency = 0.5
+MinStroke.Transparency = 0.3
 
 -- MinBar Shadow
 local MinShadow = Instance.new("Frame")
 MinShadow.Parent = MinBar
 MinShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-MinShadow.BackgroundTransparency = 0.4
+MinShadow.BackgroundTransparency = 0.6
 MinShadow.BorderSizePixel = 0
 MinShadow.Position = UDim2.new(0, 4, 0, 4)
 MinShadow.Size = UDim2.new(1, -8, 1, -8)
@@ -134,7 +132,7 @@ MinStatus.TextXAlignment = Enum.TextXAlignment.Left
 local MinExpandBtn = Instance.new("TextButton")
 MinExpandBtn.Parent = MinBar
 MinExpandBtn.BackgroundColor3 = Color3.fromRGB(60, 200, 120)
-MinExpandBtn.BackgroundTransparency = 0.6
+MinExpandBtn.BackgroundTransparency = 0.3
 MinExpandBtn.BorderSizePixel = 0
 MinExpandBtn.Position = UDim2.new(1, -45, 0.5, -15)
 MinExpandBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -145,19 +143,19 @@ MinExpandBtn.TextSize = 16
 RoundCorners(MinExpandBtn, 15)
 
 MinExpandBtn.MouseEnter:Connect(function()
-    TweenService:Create(MinExpandBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
+    TweenService:Create(MinExpandBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.1}):Play()
 end)
 MinExpandBtn.MouseLeave:Connect(function()
-    TweenService:Create(MinExpandBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.6}):Play()
+    TweenService:Create(MinExpandBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.3}):Play()
 end)
 
 -- ============================================
--- TOP BAR
+-- TOP BAR - FULLY OPAQUE
 -- ============================================
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
-TopBar.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
-TopBar.BackgroundTransparency = 0
+TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+TopBar.BackgroundTransparency = 0 -- FULLY OPAQUE
 TopBar.BorderSizePixel = 0
 TopBar.Size = UDim2.new(1, 0, 0, 55)
 RoundCorners(TopBar, 14)
@@ -202,7 +200,7 @@ Subtitle.Position = UDim2.new(0, 55, 0, 26)
 Subtitle.Size = UDim2.new(0, 200, 0, 20)
 Subtitle.Font = Enum.Font.Gotham
 Subtitle.Text = "v1.0"
-Subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
+Subtitle.TextColor3 = Color3.fromRGB(150, 150, 180)
 Subtitle.TextSize = 12
 Subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -210,7 +208,7 @@ Subtitle.TextXAlignment = Enum.TextXAlignment.Left
 local MinBtn = Instance.new("TextButton")
 MinBtn.Parent = TopBar
 MinBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 50)
-MinBtn.BackgroundTransparency = 0.6
+MinBtn.BackgroundTransparency = 0.3
 MinBtn.BorderSizePixel = 0
 MinBtn.Position = UDim2.new(1, -45, 0.5, -15)
 MinBtn.Size = UDim2.new(0, 30, 0, 30)
@@ -221,34 +219,34 @@ MinBtn.TextSize = 18
 RoundCorners(MinBtn, 15)
 
 MinBtn.MouseEnter:Connect(function()
-    TweenService:Create(MinBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.2}):Play()
+    TweenService:Create(MinBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.1}):Play()
 end)
 MinBtn.MouseLeave:Connect(function()
-    TweenService:Create(MinBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.6}):Play()
+    TweenService:Create(MinBtn, TweenInfo.new(0.2), {BackgroundTransparency = 0.3}):Play()
 end)
 
 -- ============================================
--- TABS
+-- TABS - FULLY OPAQUE
 -- ============================================
 local TabContainer = Instance.new("Frame")
 TabContainer.Parent = MainFrame
-TabContainer.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-TabContainer.BackgroundTransparency = 0
+TabContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+TabContainer.BackgroundTransparency = 0 -- FULLY OPAQUE
 TabContainer.BorderSizePixel = 0
 TabContainer.Position = UDim2.new(0, 0, 0, 55)
 TabContainer.Size = UDim2.new(0, 160, 1, -55)
 
--- Content Area
+-- Content Area - FULLY OPAQUE
 local Content = Instance.new("ScrollingFrame")
 Content.Parent = MainFrame
-Content.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-Content.BackgroundTransparency = 0
+Content.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+Content.BackgroundTransparency = 0 -- FULLY OPAQUE
 Content.BorderSizePixel = 0
 Content.Position = UDim2.new(0, 160, 0, 55)
 Content.Size = UDim2.new(1, -160, 1, -55)
 Content.CanvasSize = UDim2.new(0, 0, 0, 0)
 Content.ScrollBarThickness = 4
-Content.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 100)
+Content.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 80)
 
 -- Tab system
 local currentTab = nil
@@ -260,7 +258,7 @@ local contentY = 15
 local function CreateTab(name, icon)
     local btn = Instance.new("TextButton")
     btn.Parent = TabContainer
-    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     btn.BackgroundTransparency = 0
     btn.BorderSizePixel = 0
     btn.Position = UDim2.new(0, 5, 0, #TabContainer:GetChildren() * 48 + 10)
@@ -272,6 +270,7 @@ local function CreateTab(name, icon)
     btn.TextXAlignment = Enum.TextXAlignment.Left
     RoundCorners(btn, 8)
     
+    -- Tab indicator
     local indicator = Instance.new("Frame")
     indicator.Parent = btn
     indicator.BackgroundColor3 = Color3.fromRGB(60, 80, 200)
@@ -282,11 +281,11 @@ local function CreateTab(name, icon)
     RoundCorners(indicator, 2)
     
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(55, 55, 70)}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 45, 60)}):Play()
     end)
     btn.MouseLeave:Connect(function()
         if currentTab ~= name then
-            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play()
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 30, 40)}):Play()
         end
     end)
     
@@ -299,14 +298,14 @@ local function CreateTab(name, icon)
         
         for _, child in pairs(TabContainer:GetChildren()) do
             if child:IsA("TextButton") then
-                child.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+                child.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
                 child.TextColor3 = Color3.fromRGB(180, 180, 200)
                 local ind = child:FindFirstChildWhichIsA("Frame")
                 if ind then ind.Visible = false end
             end
         end
         
-        btn.BackgroundColor3 = Color3.fromRGB(55, 55, 70)
+        btn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         indicator.Visible = true
     end
@@ -339,7 +338,7 @@ end
 local function AddDivider()
     local frame = Instance.new("Frame")
     frame.Parent = Content
-    frame.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
+    frame.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
     frame.BackgroundTransparency = 0.5
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 20, 0, contentY)
@@ -351,7 +350,7 @@ end
 local function AddButton(text, desc, callback)
     local frame = Instance.new("Frame")
     frame.Parent = Content
-    frame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 15, 0, contentY)
@@ -363,7 +362,7 @@ local function AddButton(text, desc, callback)
     elemStroke.Parent = frame
     elemStroke.Color = Color3.fromRGB(60, 60, 80)
     elemStroke.Thickness = 1
-    elemStroke.Transparency = 0.5
+    elemStroke.Transparency = 0.3
     
     local label = Instance.new("TextLabel")
     label.Parent = frame
@@ -419,7 +418,7 @@ local function AddToggle(text, default, callback)
     
     local frame = Instance.new("Frame")
     frame.Parent = Content
-    frame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 15, 0, contentY)
@@ -431,7 +430,7 @@ local function AddToggle(text, default, callback)
     elemStroke.Parent = frame
     elemStroke.Color = Color3.fromRGB(60, 60, 80)
     elemStroke.Thickness = 1
-    elemStroke.Transparency = 0.5
+    elemStroke.Transparency = 0.3
     
     local label = Instance.new("TextLabel")
     label.Parent = frame
@@ -489,7 +488,7 @@ local function AddSlider(text, min, max, default, callback)
     
     local frame = Instance.new("Frame")
     frame.Parent = Content
-    frame.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 15, 0, contentY)
@@ -501,7 +500,7 @@ local function AddSlider(text, min, max, default, callback)
     elemStroke.Parent = frame
     elemStroke.Color = Color3.fromRGB(60, 60, 80)
     elemStroke.Thickness = 1
-    elemStroke.Transparency = 0.5
+    elemStroke.Transparency = 0.3
     
     local label = Instance.new("TextLabel")
     label.Parent = frame
@@ -764,7 +763,7 @@ AddButton("Terminate Script", "⚠️ Stops all script execution", function()
     
     local box = Instance.new("Frame")
     box.Parent = confirm
-    box.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+    box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
     box.BackgroundTransparency = 0
     box.BorderSizePixel = 0
     box.Position = UDim2.new(0.5, -150, 0.5, -60)
