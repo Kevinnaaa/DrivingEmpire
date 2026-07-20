@@ -1,23 +1,19 @@
 -- ============================================
--- RAYFIELD UI - Using sirius.menu/rayfield
+-- RAYFIELD UI - Vertical Tabs (Sidebar)
 -- ============================================
 
--- Load Rayfield from sirius.menu
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Check if loaded
 if not Rayfield then
-    warn("Failed to load Rayfield from sirius.menu")
-    -- Fallback to working source
     Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/Kevinnaaa/BloxStrike/main/ref.lua"))()
 end
 
 if not Rayfield then
-    error("❌ Failed to load Rayfield from any source!")
+    error("❌ Failed to load Rayfield!")
 end
 
 -- ============================================
--- CREATE WINDOW
+-- CREATE WINDOW (Vertical Tabs - Default)
 -- ============================================
 local Window = Rayfield:CreateWindow({
     Name = "Script Hub",
@@ -31,10 +27,11 @@ local Window = Rayfield:CreateWindow({
     },
     KeySystem = false,
     ToggleUIKeybind = "K"
+    -- No TabLayout needed - Vertical is default
 })
 
 -- ============================================
--- CREATE TABS
+-- CREATE TABS (Vertical layout - left sidebar)
 -- ============================================
 local MainTab = Window:CreateTab("Main", "home")
 local SecurityTab = Window:CreateTab("Security", "shield")
@@ -156,7 +153,6 @@ SecurityTab:CreateButton({
             return
         end
         
-        -- Detach first if already attached
         if isAttached then
             if attachmentConnection then
                 attachmentConnection:Disconnect()
