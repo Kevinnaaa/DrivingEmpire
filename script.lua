@@ -852,7 +852,7 @@ AddDivider()
 AddSection("Welcome")
 AddSmallLabel("👋 Welcome to Script Hub!", Color3.fromRGB(200, 200, 220))
 AddSmallLabel("🔧 Use the Security tab for teleport features", Color3.fromRGB(150, 150, 180))
-AddSmallLabel("📌 Press RightShift to toggle this UI", Color3.fromRGB(150, 150, 180))
+AddSmallLabel("📌 Click '─' to minimize or expand the UI", Color3.fromRGB(150, 150, 180))
 
 AddDivider()
 AddSection("Quick Actions")
@@ -1140,7 +1140,7 @@ end)
 
 AddDivider()
 AddSmallLabel("Made with ❤️ by QueezZy123", Color3.fromRGB(100, 100, 140))
-AddSmallLabel("Press RightShift to toggle", Color3.fromRGB(80, 80, 120))
+AddSmallLabel("Click '─' to minimize", Color3.fromRGB(80, 80, 120))
 
 -- ============================================
 -- WINDOW CONTROLS
@@ -1151,28 +1151,6 @@ end)
 
 MinExpandBtn.MouseButton1Click:Connect(function()
     ExpandUI()
-end)
-
--- ============================================
--- KEYBIND (RightShift to toggle)
--- ============================================
-UserInputService.InputBegan:Connect(function(input)
-    if input.KeyCode == Enum.KeyCode.RightShift then
-        if isHidden then
-            isHidden = false
-            if isMinimized then
-                MinBar.Visible = true
-            else
-                MainFrame.Visible = true
-            end
-        else
-            if isMinimized then
-                MinBar.Visible = not MinBar.Visible
-            else
-                MainFrame.Visible = not MainFrame.Visible
-            end
-        end
-    end
 end)
 
 -- ============================================
@@ -1243,4 +1221,4 @@ end)
 print("✨ Modern UI loaded successfully!")
 print("📌 Script by QueezZy123")
 print("🎮 Games: Driving Empire")
-print("📌 Press RightShift to toggle the UI")
+print("📌 Click '─' to minimize/expand the UI")
