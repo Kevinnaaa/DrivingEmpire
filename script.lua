@@ -1,5 +1,5 @@
 -- ============================================
--- RAYFIELD UI - Teleport & Attach (10 Studs)
+-- RAYFIELD UI - Auto-Refresh Players (0.5s)
 -- ============================================
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -28,9 +28,11 @@ local attachedPlayer = nil
 local attachmentConnection = nil
 local selectedTarget = nil
 local ATTACH_DISTANCE = 10
+local Dropdown = nil
+local StatusLabel = nil
 
 -- ============================================
--- TELEPORT FUNCTION (FIXED)
+-- TELEPORT FUNCTION
 -- ============================================
 local function TeleportToPlayer(targetPlayer)
     if not targetPlayer or targetPlayer == "No players found" then
@@ -44,10 +46,8 @@ local function TeleportToPlayer(targetPlayer)
         return false
     end
     
-    -- Get target character
     local targetChar = target.Character
     if not targetChar then
-        -- Wait for character if it doesn't exist
         target.CharacterAdded:Wait()
         task.wait(0.5)
         targetChar = target.Character
@@ -63,7 +63,6 @@ local function TeleportToPlayer(targetPlayer)
         return false
     end
     
-    -- Get your character
     local myChar = player.Character
     if not myChar then
         print("❌ You have no character")
@@ -76,22 +75,16 @@ local function TeleportToPlayer(targetPlayer)
         return false
     end
     
-    -- Calculate position 10 studs away from target
     local targetPos = targetHRP.Position
     local myPos = myHRP.Position
-    
-    -- Get direction from target to player
     local direction = (myPos - targetPos).Unit
     
-    -- If player is too close, teleport behind target
     if (myPos - targetPos).Magnitude < 5 then
         direction = (targetHRP.CFrame.LookVector * -1).Unit
     end
     
-    -- Position 10 studs away
     local newPos = targetPos + direction * ATTACH_DISTANCE
     
-    -- Check for ground to avoid going underground
     local raycastParams = RaycastParams.new()
     raycastParams.FilterDescendantsInstances = {myChar, targetChar}
     raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
@@ -107,7 +100,6 @@ local function TeleportToPlayer(targetPlayer)
         end
     end
     
-    -- Teleport
     local cframe = CFrame.new(newPos, targetHRP.Position)
     myHRP.CFrame = cframe
     
@@ -116,7 +108,7 @@ local function TeleportToPlayer(targetPlayer)
 end
 
 -- ============================================
--- ATTACH FUNCTION (10 Studs Distance)
+-- ATTACH FUNCTION
 -- ============================================
 local function AttachToPlayer(targetPlayer)
     if not targetPlayer or targetPlayer == "No players found" then
@@ -135,7 +127,6 @@ local function AttachToPlayer(targetPlayer)
         return false
     end
     
-    -- Detach first if already attached
     if isAttached then
         DetachFromPlayer()
     end
@@ -143,17 +134,14 @@ local function AttachToPlayer(targetPlayer)
     attachedPlayer = target
     isAttached = true
     
-    -- First teleport to the player
     TeleportToPlayer(targetPlayer)
     
-    -- Create attachment connection
     attachmentConnection = RunService.Heartbeat:Connect(function()
         if not isAttached or not attachedPlayer then
             DetachFromPlayer()
             return
         end
         
-        -- Check if target still exists and has a character
         if not attachedPlayer.Parent or not attachedPlayer.Character then
             print("⚠️ Target left the game or died, detaching...")
             DetachFromPlayer()
@@ -171,11 +159,8 @@ local function AttachToPlayer(targetPlayer)
         if myHRP and targetHRP then
             local targetPos = targetHRP.Position
             local myPos = myHRP.Position
-            
-            -- Check current distance
             local currentDistance = (myPos - targetPos).Magnitude
             
-            -- If too close or too far, reposition
             if currentDistance < (ATTACH_DISTANCE - 2) or currentDistance > (ATTACH_DISTANCE + 2) then
                 local direction = (myPos - targetPos).Unit
                 
@@ -185,7 +170,6 @@ local function AttachToPlayer(targetPlayer)
                 
                 local newPos = targetPos + direction * ATTACH_DISTANCE
                 
-                -- Check for ground
                 local raycastParams = RaycastParams.new()
                 raycastParams.FilterDescendantsInstances = {myChar, attachedPlayer.Character}
                 raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
@@ -201,12 +185,10 @@ local function AttachToPlayer(targetPlayer)
                     end
                 end
                 
-                -- Teleport to new position
                 local cframe = CFrame.new(newPos, targetHRP.Position)
                 myHRP.CFrame = cframe
             end
             
-            -- Always face the target
             local lookAtCFrame = CFrame.lookAt(myHRP.Position, targetHRP.Position)
             myHRP.CFrame = lookAtCFrame
         end
@@ -251,6 +233,45 @@ local function GetPlayerNames()
         table.insert(names, "No players found")
     end
     return names
+end
+
+-- ============================================
+-- AUTO-REFRESH PLAYER LIST (Every 0.5s)
+-- ============================================
+local function RefreshPlayerList()
+    if not Dropdown then return end
+    
+    local currentNames = GetPlayerNames()
+    local currentSelected = selectedTarget
+    
+    -- Check if current selected still exists
+    local stillExists = false
+    for _, name in ipairs(currentNames) do
+        if name == currentSelected then
+            stillExists = true
+            break
+        end
+    end
+    
+    -- Update dropdown options
+    Dropdown:Refresh(currentNames)
+    
+    -- If selected player no longer exists, select first available
+    if not stillExists and currentSelected and currentSelected ~= "No players found" then
+        if #currentNames > 0 and currentNames[1] ~= "No players found" then
+            selectedTarget = currentNames[1]
+            Dropdown:Set({selectedTarget})
+            if StatusLabel then
+                StatusLabel:Set("📌 Status: Selected " .. selectedTarget)
+            end
+        else
+            selectedTarget = "No players found"
+            Dropdown:Set({"No players found"})
+            if StatusLabel then
+                StatusLabel:Set("📌 Status: No players found")
+            end
+        end
+    end
 end
 
 -- ============================================
@@ -308,25 +329,7 @@ MainTab:CreateButton({
 SecurityTab:CreateSection("Teleport & Attach")
 
 -- Player selection dropdown
-local function RefreshDropdown()
-    local names = GetPlayerNames()
-    if Dropdown and Dropdown.Refresh then
-        Dropdown:Refresh(names)
-    end
-    if #names > 0 and names[1] ~= "No players found" then
-        if Dropdown and Dropdown.Set then
-            Dropdown:Set({names[1]})
-        end
-        selectedTarget = names[1]
-    else
-        if Dropdown and Dropdown.Set then
-            Dropdown:Set({"No players found"})
-        end
-        selectedTarget = "No players found"
-    end
-end
-
-local Dropdown = SecurityTab:CreateDropdown({
+Dropdown = SecurityTab:CreateDropdown({
     Name = "Select Player",
     Options = GetPlayerNames(),
     CurrentOption = {GetPlayerNames()[1]},
@@ -346,7 +349,7 @@ local Dropdown = SecurityTab:CreateDropdown({
 SecurityTab:CreateDivider()
 
 -- Status Label
-local StatusLabel = SecurityTab:CreateLabel("📌 Status: No player selected", 0, Color3.fromRGB(200, 200, 220), false)
+StatusLabel = SecurityTab:CreateLabel("📌 Status: No player selected", 0, Color3.fromRGB(200, 200, 220), false)
 
 SecurityTab:CreateDivider()
 
@@ -452,19 +455,18 @@ SecurityTab:CreateDivider()
 
 -- Distance Display
 SecurityTab:CreateLabel("📏 Attach Distance: 10 studs", 0, Color3.fromRGB(150, 200, 255), false)
+SecurityTab:CreateLabel("🔄 Auto-refresh: Every 0.5s", 0, Color3.fromRGB(150, 200, 150), false)
 
--- Refresh Player List Button
-SecurityTab:CreateButton({
-    Name = "🔄 Refresh Player List",
-    Callback = function()
-        RefreshDropdown()
-        Rayfield:Notify({
-            Title = "Info",
-            Content = "Player list refreshed!",
-            Duration = 2
-        })
+-- ============================================
+-- START AUTO-REFRESH (Every 0.5 seconds)
+-- ============================================
+task.spawn(function()
+    while true do
+        task.wait(0.5) -- Refresh every 0.5 seconds
+        if not Rayfield or not Dropdown then break end
+        pcall(RefreshPlayerList)
     end
-})
+end)
 
 -- ============================================
 -- VISUALS TAB
@@ -585,7 +587,7 @@ Rayfield:LoadConfiguration()
 -- ============================================
 Rayfield:Notify({
     Title = "Success",
-    Content = "UI Loaded Successfully! (10 studs distance)",
+    Content = "UI Loaded Successfully! (10 studs, 0.5s refresh)",
     Duration = 3
 })
 
@@ -594,3 +596,4 @@ print("📌 Script by QueezZy123")
 print("🎮 Games: Driving Empire")
 print("📌 Press K to toggle the UI")
 print("📏 Attach Distance: 10 studs")
+print("🔄 Auto-refresh: Every 0.5 seconds")
