@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- COMPLETE WORKING VERSION
+-- With Teleport & Attach (Using MoveTo)
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -820,7 +820,7 @@ local function AddDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- SECURE TELEPORT FUNCTION
+-- TELEPORT FUNCTION (Using MoveTo)
 -- ============================================
 local function TeleportToPlayer(targetPlayer)
     if not targetPlayer then
@@ -834,26 +834,34 @@ local function TeleportToPlayer(targetPlayer)
         return false
     end
     
-    -- Check if target has character and HumanoidRootPart
-    if not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then
-        print("❌ Target has no HumanoidRootPart - character may be dead")
+    -- Check target character and HumanoidRootPart
+    local targetChar = target.Character
+    if not targetChar then
+        print("❌ Target has no character")
         return false
     end
     
-    -- Check if you have character and HumanoidRootPart
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-        print("❌ You have no HumanoidRootPart")
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    if not targetHRP then
+        print("❌ Target has no HumanoidRootPart")
         return false
     end
     
-    -- Teleport directly to target using CFrame (more precise than MoveTo)
-    player.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+    -- Check your character
+    local myChar = player.Character
+    if not myChar then
+        print("❌ You have no character")
+        return false
+    end
+    
+    -- Teleport using MoveTo (from the other script)
+    myChar:MoveTo(targetHRP.Position)
     print("✅ Teleported to: " .. target.Name)
     return true
 end
 
 -- ============================================
--- SECURE ATTACH FUNCTION
+-- ATTACH FUNCTION (Using MoveTo)
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -883,9 +891,16 @@ local function AttachToPlayer(targetPlayer)
         return false
     end
     
-    -- Check if target has character and HumanoidRootPart
-    if not target.Character or not target.Character:FindFirstChild("HumanoidRootPart") then
-        print("❌ Target has no HumanoidRootPart - character may be dead")
+    -- Check target character and HumanoidRootPart
+    local targetChar = target.Character
+    if not targetChar then
+        print("❌ Target has no character")
+        return false
+    end
+    
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    if not targetHRP then
+        print("❌ Target has no HumanoidRootPart")
         return false
     end
     
@@ -947,14 +962,8 @@ local function AttachToPlayer(targetPlayer)
             return
         end
         
-        -- Check if you have HumanoidRootPart
-        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-        if not myHRP then
-            return
-        end
-        
-        -- Attach to target (3 studs above to avoid clipping)
-        myHRP.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
+        -- Attach using MoveTo
+        myChar:MoveTo(targetHRP.Position)
     end)
     
     print("✅ Attached to: " .. target.Name)
@@ -1342,11 +1351,11 @@ AddSmallLabel("Click '─' to minimize", Color3.fromRGB(80, 80, 120))
 mainTab.select()
 
 -- ============================================
--- AUTO-REFRESH PLAYER LIST (Every 2 seconds)
+-- AUTO-REFRESH PLAYER LIST (Every 0.5 seconds)
 -- ============================================
 task.spawn(function()
     while true do
-        task.wait(2)
+        task.wait(0.5)
         if not ScreenGui or not ScreenGui.Parent then break end
         pcall(RefreshDropdown)
     end
