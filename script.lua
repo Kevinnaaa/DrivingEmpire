@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- Fixed: Using Actual Username (Not DisplayName)
+-- Fixed: Player List Showing All Players
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -608,7 +608,7 @@ local function AddToggle(text, default, callback)
 end
 
 -- ============================================
--- EXPANDING DROPDOWN
+-- EXPANDING DROPDOWN (FIXED - Shows all players)
 -- ============================================
 local function AddDropdown(text, options, default, callback)
     local data = tabContents[currentTab]
@@ -679,6 +679,7 @@ local function AddDropdown(text, options, default, callback)
     arrow.TextXAlignment = Enum.TextXAlignment.Center
     arrow.ZIndex = 52
     
+    -- LIST FRAME (Shows all players)
     local listFrame = Instance.new("ScrollingFrame")
     listFrame.Parent = frame
     listFrame.BackgroundColor3 = Color3.fromRGB(35, 18, 50)
@@ -703,7 +704,9 @@ local function AddDropdown(text, options, default, callback)
     listLayout.Parent = listFrame
     listLayout.Padding = UDim.new(0, 2)
     
+    -- UPDATE LIST (Shows ALL players)
     local function updateList()
+        -- Clear old buttons
         for _, child in pairs(listFrame:GetChildren()) do
             if child:IsA("TextButton") then
                 child:Destroy()
@@ -711,7 +714,20 @@ local function AddDropdown(text, options, default, callback)
         end
         
         local totalHeight = 0
-        for _, option in ipairs(options) do
+        
+        -- Get current player names
+        local currentOptions = {}
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= player then
+                table.insert(currentOptions, plr.Name)
+            end
+        end
+        if #currentOptions == 0 then
+            table.insert(currentOptions, "No players found")
+        end
+        
+        -- Create button for each player
+        for _, option in ipairs(currentOptions) do
             local optBtn = Instance.new("TextButton")
             optBtn.Parent = listFrame
             optBtn.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
@@ -726,6 +742,7 @@ local function AddDropdown(text, options, default, callback)
             RoundCorners(optBtn, 4)
             optBtn.ZIndex = 101
             
+            -- Hover effect
             optBtn.MouseEnter:Connect(function()
                 if option ~= selected then
                     TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = ELEMBGHOVER}):Play()
@@ -737,11 +754,13 @@ local function AddDropdown(text, options, default, callback)
                 end
             end)
             
+            -- Highlight selected
             if option == selected then
                 optBtn.BackgroundColor3 = ACCENT
                 optBtn.TextColor3 = TEXT
             end
             
+            -- Click handler
             optBtn.MouseButton1Click:Connect(function()
                 selected = option
                 dropdownBtn.Text = option
@@ -750,6 +769,7 @@ local function AddDropdown(text, options, default, callback)
                 listFrame.Visible = false
                 frame.Size = UDim2.new(1, -30, 0, 50)
                 
+                -- Update selection highlight
                 for _, child in pairs(listFrame:GetChildren()) do
                     if child:IsA("TextButton") then
                         child.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
@@ -771,15 +791,16 @@ local function AddDropdown(text, options, default, callback)
         listFrame.Size = UDim2.new(1, -140, 0, listHeight)
     end
     
+    -- Toggle dropdown
     dropdownBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
+            updateList() -- Refresh list when opening
             local listHeight = listFrame.CanvasSize.Y.Offset
             local newHeight = 50 + math.min(listHeight, 150) + 10
             frame.Size = UDim2.new(1, -30, 0, newHeight)
             listFrame.Visible = true
             arrow.Text = "▲"
-            updateList()
         else
             frame.Size = UDim2.new(1, -30, 0, 50)
             listFrame.Visible = false
@@ -787,6 +808,7 @@ local function AddDropdown(text, options, default, callback)
         end
     end)
     
+    -- Close dropdown when clicking outside
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             if isOpen then
@@ -812,30 +834,27 @@ local function AddDropdown(text, options, default, callback)
             dropdownBtn.Text = val
             if callback then callback(val) end
         end,
-        refresh = function(newOptions)
-            options = newOptions
+        refresh = function()
             updateList()
         end
     }
 end
 
 -- ============================================
--- TELEPORT FUNCTION (Uses Actual Username)
+-- TELEPORT FUNCTION
 -- ============================================
 local function TeleportToPlayer(targetName)
-    if not targetName then
+    if not targetName or targetName == "No players found" then
         print("❌ No target player selected")
         return false
     end
     
-    -- Find player by actual username
     local target = Players:FindFirstChild(targetName)
     if not target then
         print("❌ Player not found: " .. targetName)
         return false
     end
     
-    -- Check target character and HumanoidRootPart
     local targetChar = target.Character
     if not targetChar then
         print("❌ Target has no character")
@@ -848,21 +867,19 @@ local function TeleportToPlayer(targetName)
         return false
     end
     
-    -- Check your character
     local myChar = player.Character
     if not myChar then
         print("❌ You have no character")
         return false
     end
     
-    -- Teleport using MoveTo
     myChar:MoveTo(targetHRP.Position)
     print("✅ Teleported to: " .. target.Name)
     return true
 end
 
 -- ============================================
--- ATTACH FUNCTION (Uses Actual Username)
+-- ATTACH FUNCTION
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -881,19 +898,17 @@ local function StopFollowing()
 end
 
 local function AttachToPlayer(targetName)
-    if not targetName then
+    if not targetName or targetName == "No players found" then
         print("❌ No target player selected")
         return false
     end
     
-    -- Find player by actual username
     local target = Players:FindFirstChild(targetName)
     if not target then
         print("❌ Player not found: " .. targetName)
         return false
     end
     
-    -- Check target character and HumanoidRootPart
     local targetChar = target.Character
     if not targetChar then
         print("❌ Target has no character")
@@ -906,7 +921,6 @@ local function AttachToPlayer(targetName)
         return false
     end
     
-    -- Stop current following
     if isAttached then
         StopFollowing()
     end
@@ -914,7 +928,6 @@ local function AttachToPlayer(targetName)
     attachedPlayer = target
     isAttached = true
     
-    -- Death detection
     local function onPlayerDeath()
         print("⚠️ Player died - detaching...")
         StopFollowing()
@@ -927,7 +940,6 @@ local function AttachToPlayer(targetName)
         deathConnection = player.Character.Humanoid.Died:Connect(onPlayerDeath)
     end
     
-    -- Attachment connection
     if attachmentConnection then
         attachmentConnection:Disconnect()
         attachmentConnection = nil
@@ -939,32 +951,27 @@ local function AttachToPlayer(targetName)
             return
         end
         
-        -- Check if target still exists
         if not attachedPlayer.Parent then
             print("⚠️ Target left the game - detaching...")
             StopFollowing()
             return
         end
         
-        -- Check if target has character
         local targetChar = attachedPlayer.Character
         if not targetChar then
             return
         end
         
-        -- Check if target has HumanoidRootPart
         local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
         if not targetHRP then
             return
         end
         
-        -- Check if you have character
         local myChar = player.Character
         if not myChar then
             return
         end
         
-        -- Attach using MoveTo
         myChar:MoveTo(targetHRP.Position)
     end)
     
@@ -973,13 +980,12 @@ local function AttachToPlayer(targetName)
 end
 
 -- ============================================
--- GET PLAYER LIST (Uses Actual Username)
+-- GET PLAYER LIST
 -- ============================================
 local function GetPlayerNames()
     local names = {}
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= player then
-            -- Use plr.Name (actual username) not plr.DisplayName
             table.insert(names, plr.Name)
         end
     end
@@ -1083,16 +1089,8 @@ AddSection("Teleport & Attach")
 
 -- Player selection dropdown
 local function RefreshDropdown()
-    local names = GetPlayerNames()
     if playerDropdown then
-        playerDropdown.refresh(names)
-        if #names > 0 and names[1] ~= "No players found" then
-            playerDropdown.set(names[1])
-            selectedTargetName = names[1]
-        else
-            playerDropdown.set("No players found")
-            selectedTargetName = "No players found"
-        end
+        playerDropdown.refresh()
     end
 end
 
