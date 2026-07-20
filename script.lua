@@ -1,6 +1,5 @@
 -- ============================================
--- MODERN UI - Custom Color Theme with Overlay Dropdown
--- Hex: #221C35 | RGB: (152,29,151)
+-- MODERN UI - Fixed Dropdown with Visible Names
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -269,7 +268,7 @@ Content.Size = UDim2.new(1, -160, 1, -55)
 Content.CanvasSize = UDim2.new(0, 0, 0, 0)
 Content.ScrollBarThickness = 4
 Content.ScrollBarImageColor3 = BORDER
-Content.ClipsDescendants = true  -- Keep content clipped
+Content.ClipsDescendants = true
 
 -- Tab system
 local currentTab = nil
@@ -318,7 +317,7 @@ local function CreateTab(name, icon)
     tabContainer.Size = UDim2.new(1, 0, 0, 0)
     tabContainer.Visible = false
     tabContainer.ZIndex = 15
-    tabContainer.ClipsDescendants = false  -- Allow dropdown to overflow
+    tabContainer.ClipsDescendants = false
     
     tabContents[name] = {
         container = tabContainer,
@@ -474,7 +473,7 @@ local function AddButton(text, desc, callback)
     frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 50)
     RoundCorners(frame, 10)
-    frame.ClipsDescendants = false  -- Allow dropdown to overflow
+    frame.ClipsDescendants = false
     
     local elemStroke = Instance.new("UIStroke")
     elemStroke.Parent = frame
@@ -607,7 +606,7 @@ local function AddToggle(text, default, callback)
 end
 
 -- ============================================
--- OVERLAY DROPDOWN (Fixes the issue)
+-- FIXED DROPDOWN - With Visible Names
 -- ============================================
 local function AddDropdown(text, options, default, callback)
     local data = tabContents[currentTab]
@@ -618,7 +617,7 @@ local function AddDropdown(text, options, default, callback)
     local selected = default or options[1] or "Select"
     local isOpen = false
     
-    -- Main frame - NO CLIPPING
+    -- Main frame
     local frame = Instance.new("Frame")
     frame.Parent = container
     frame.BackgroundColor3 = ELEMBG
@@ -627,7 +626,7 @@ local function AddDropdown(text, options, default, callback)
     frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 50)
     RoundCorners(frame, 10)
-    frame.ClipsDescendants = false  -- CRITICAL: Allow dropdown to overflow
+    frame.ClipsDescendants = false
     frame.ZIndex = 50
     
     local elemStroke = Instance.new("UIStroke")
@@ -659,7 +658,7 @@ local function AddDropdown(text, options, default, callback)
     dropdownBtn.Size = UDim2.new(1, -140, 0, 34)
     dropdownBtn.Font = Enum.Font.Gotham
     dropdownBtn.Text = selected
-    dropdownBtn.TextColor3 = TEXT
+    dropdownBtn.TextColor3 = TEXT  -- White text so it's visible
     dropdownBtn.TextSize = 13
     dropdownBtn.TextXAlignment = Enum.TextXAlignment.Left
     RoundCorners(dropdownBtn, 8)
@@ -677,12 +676,12 @@ local function AddDropdown(text, options, default, callback)
     arrow.Size = UDim2.new(0, 20, 1, 0)
     arrow.Font = Enum.Font.GothamBold
     arrow.Text = "▼"
-    arrow.TextColor3 = TEXTDIM
+    arrow.TextColor3 = TEXT
     arrow.TextSize = 12
     arrow.TextXAlignment = Enum.TextXAlignment.Center
     arrow.ZIndex = 52
     
-    -- OVERLAY LIST (Parented to ScreenGui with HIGH ZIndex)
+    -- OVERLAY LIST
     local listFrame = Instance.new("ScrollingFrame")
     listFrame.Name = "DropdownOverlay"
     listFrame.Parent = ScreenGui
@@ -695,7 +694,7 @@ local function AddDropdown(text, options, default, callback)
     listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     listFrame.ScrollBarThickness = 4
     listFrame.ScrollBarImageColor3 = ACCENT_DARK
-    listFrame.ZIndex = 100  -- HIGH ZIndex to overlay everything
+    listFrame.ZIndex = 100
     RoundCorners(listFrame, 8)
     
     -- Border for list
@@ -720,7 +719,7 @@ local function AddDropdown(text, options, default, callback)
     listLayout.Parent = listFrame
     listLayout.Padding = UDim.new(0, 2)
     
-    -- Update list function
+    -- Update list function with VISIBLE text
     local function updateList()
         for _, child in pairs(listFrame:GetChildren()) do
             if child:IsA("TextButton") or child:IsA("Frame") then
@@ -740,12 +739,13 @@ local function AddDropdown(text, options, default, callback)
             optBtn.Size = UDim2.new(1, 0, 0, 32)
             optBtn.Font = Enum.Font.Gotham
             optBtn.Text = "  " .. option
-            optBtn.TextColor3 = TEXTDIM
+            optBtn.TextColor3 = TEXT  -- WHITE text so it's visible
             optBtn.TextSize = 13
             optBtn.TextXAlignment = Enum.TextXAlignment.Left
             RoundCorners(optBtn, 4)
             optBtn.ZIndex = 101
             
+            -- Hover effect
             optBtn.MouseEnter:Connect(function()
                 if option ~= selected then
                     TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = ELEMBGHOVER}):Play()
@@ -757,6 +757,7 @@ local function AddDropdown(text, options, default, callback)
                 end
             end)
             
+            -- Selected style
             if option == selected then
                 optBtn.BackgroundColor3 = ACCENT
                 optBtn.TextColor3 = TEXT
@@ -772,7 +773,7 @@ local function AddDropdown(text, options, default, callback)
                 for _, child in pairs(listFrame:GetChildren()) do
                     if child:IsA("TextButton") then
                         child.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
-                        child.TextColor3 = TEXTDIM
+                        child.TextColor3 = TEXT
                         if child.Text == "  " .. selected then
                             child.BackgroundColor3 = ACCENT
                             child.TextColor3 = TEXT
@@ -790,11 +791,10 @@ local function AddDropdown(text, options, default, callback)
         listFrame.Size = UDim2.new(0, 400, 0, listHeight)
     end
     
-    -- Toggle dropdown with overlay positioning
+    -- Toggle dropdown
     dropdownBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
-            -- Position the overlay list below the dropdown button
             local absPos = dropdownBtn.AbsolutePosition
             local absSize = dropdownBtn.AbsoluteSize
             
@@ -803,7 +803,6 @@ local function AddDropdown(text, options, default, callback)
             arrow.Text = "▲"
             updateList()
             
-            -- Make sure list stays within screen bounds
             local viewportSize = game:GetService("Workspace").CurrentCamera.ViewportSize
             local listPos = listFrame.AbsolutePosition
             local listSize = listFrame.AbsoluteSize
@@ -1224,7 +1223,7 @@ AddButton("Full Bright", "Toggles lighting brightness", function()
 end)
 
 -- ============================================
--- SETTINGS TAB CONTENT (Only Terminate)
+-- SETTINGS TAB CONTENT
 -- ============================================
 settingsTab.select()
 AddSection("Script Control")
