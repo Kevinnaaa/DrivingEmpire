@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- Expanding Dropdown (Not Overlay)
+-- Fixed Teleport & Attach (0.5s Checking)
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -17,15 +17,14 @@ local Workspace = game:GetService("Workspace")
 local player = Players.LocalPlayer
 
 -- ============================================
--- DARK PURPLE COLORS
+-- DARK PURPLE COLORS (#221C35)
 -- ============================================
 local BACKGROUND = Color3.fromRGB(34, 28, 53)      -- #221C35
 local TOPBAR = Color3.fromRGB(45, 35, 65)          -- Slightly lighter
 local TABBG = Color3.fromRGB(28, 22, 45)           -- Darker tabs
 local ELEMBG = Color3.fromRGB(50, 40, 72)          -- Element background
 local ELEMBGHOVER = Color3.fromRGB(65, 50, 90)     -- Element hover
-local ACCENT = Color3.fromRGB(152, 29, 151)        -- Main accent color (152,29,151)
-local ACCENT_DARK = Color3.fromRGB(120, 20, 120)   -- Darker accent
+local ACCENT = Color3.fromRGB(152, 29, 151)        -- Main accent color
 local ACCENT_LIGHT = Color3.fromRGB(180, 60, 180)  -- Lighter accent
 local BORDER = Color3.fromRGB(100, 50, 130)        -- Border color
 local TEXT = Color3.fromRGB(255, 255, 255)         -- White text
@@ -320,7 +319,7 @@ local function CreateTab(name, icon)
     tabContainer.Size = UDim2.new(1, 0, 0, 0)
     tabContainer.Visible = false
     tabContainer.ZIndex = 15
-    tabContainer.ClipsDescendants = false  -- Allow dropdown to expand
+    tabContainer.ClipsDescendants = false
     
     tabContents[name] = {
         container = tabContainer,
@@ -609,7 +608,7 @@ local function AddToggle(text, default, callback)
 end
 
 -- ============================================
--- EXPANDING DROPDOWN (Not Overlay)
+-- EXPANDING DROPDOWN
 -- ============================================
 local function AddDropdown(text, options, default, callback)
     local data = tabContents[currentTab]
@@ -620,7 +619,6 @@ local function AddDropdown(text, options, default, callback)
     local selected = default or options[1] or "Select"
     local isOpen = false
     
-    -- Main frame
     local frame = Instance.new("Frame")
     frame.Parent = container
     frame.BackgroundColor3 = ELEMBG
@@ -629,7 +627,7 @@ local function AddDropdown(text, options, default, callback)
     frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 50)
     RoundCorners(frame, 10)
-    frame.ClipsDescendants = false  -- Allow expansion
+    frame.ClipsDescendants = false
     frame.ZIndex = 50
     
     local elemStroke = Instance.new("UIStroke")
@@ -638,7 +636,6 @@ local function AddDropdown(text, options, default, callback)
     elemStroke.Thickness = 1
     elemStroke.Transparency = 0.2
     
-    -- Label
     local label = Instance.new("TextLabel")
     label.Parent = frame
     label.BackgroundTransparency = 1
@@ -651,7 +648,6 @@ local function AddDropdown(text, options, default, callback)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.ZIndex = 51
     
-    -- Dropdown button
     local dropdownBtn = Instance.new("TextButton")
     dropdownBtn.Parent = frame
     dropdownBtn.BackgroundColor3 = Color3.fromRGB(45, 25, 60)
@@ -671,7 +667,6 @@ local function AddDropdown(text, options, default, callback)
     textPad.Parent = dropdownBtn
     textPad.PaddingLeft = UDim.new(0, 10)
     
-    -- Arrow
     local arrow = Instance.new("TextLabel")
     arrow.Parent = dropdownBtn
     arrow.BackgroundTransparency = 1
@@ -684,7 +679,6 @@ local function AddDropdown(text, options, default, callback)
     arrow.TextXAlignment = Enum.TextXAlignment.Center
     arrow.ZIndex = 52
     
-    -- EXPANDING LIST (Inside the frame, not overlay)
     local listFrame = Instance.new("ScrollingFrame")
     listFrame.Parent = frame
     listFrame.BackgroundColor3 = Color3.fromRGB(35, 18, 50)
@@ -695,7 +689,7 @@ local function AddDropdown(text, options, default, callback)
     listFrame.Visible = false
     listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     listFrame.ScrollBarThickness = 4
-    listFrame.ScrollBarImageColor3 = ACCENT_DARK
+    listFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 50, 130)
     listFrame.ZIndex = 100
     RoundCorners(listFrame, 8)
     
@@ -709,7 +703,6 @@ local function AddDropdown(text, options, default, callback)
     listLayout.Parent = listFrame
     listLayout.Padding = UDim.new(0, 2)
     
-    -- Update list function
     local function updateList()
         for _, child in pairs(listFrame:GetChildren()) do
             if child:IsA("TextButton") then
@@ -727,7 +720,7 @@ local function AddDropdown(text, options, default, callback)
             optBtn.Size = UDim2.new(1, 0, 0, 32)
             optBtn.Font = Enum.Font.Gotham
             optBtn.Text = "  " .. option
-            optBtn.TextColor3 = TEXT  -- White for visibility
+            optBtn.TextColor3 = TEXT
             optBtn.TextSize = 13
             optBtn.TextXAlignment = Enum.TextXAlignment.Left
             RoundCorners(optBtn, 4)
@@ -778,7 +771,6 @@ local function AddDropdown(text, options, default, callback)
         listFrame.Size = UDim2.new(1, -140, 0, listHeight)
     end
     
-    -- Toggle dropdown
     dropdownBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
@@ -795,7 +787,6 @@ local function AddDropdown(text, options, default, callback)
         end
     end)
     
-    -- Close dropdown when clicking outside
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             if isOpen then
@@ -829,17 +820,37 @@ local function AddDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- TELEPORT & ATTACH FUNCTIONS
+-- TELEPORT FUNCTION (FIXED - 0.5s Checking)
 -- ============================================
 local function TeleportToPlayer(targetPlayer)
-    if not targetPlayer or not targetPlayer.Character then
-        print("❌ Player not found or no character")
+    if not targetPlayer then
+        print("❌ No target player selected")
         return false
     end
     
-    local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local target = Players:FindFirstChild(targetPlayer)
+    if not target then
+        print("❌ Player not found: " .. targetPlayer)
+        return false
+    end
+    
+    -- Wait for target character with 0.5s checks
+    local targetChar = target.Character
+    local attempts = 0
+    while not targetChar and attempts < 10 do
+        task.wait(0.5)
+        targetChar = target.Character
+        attempts = attempts + 1
+    end
+    
+    if not targetChar then
+        print("❌ Target character failed to load")
+        return false
+    end
+    
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
     if not targetHRP then
-        print("❌ Target has no HumanoidRootPart")
+        print("❌ Target has no HumanoidRootPart - character may be dead")
         return false
     end
     
@@ -855,57 +866,51 @@ local function TeleportToPlayer(targetPlayer)
         return false
     end
     
-    local targetPos = targetHRP.Position
-    local myPos = myHRP.Position
-    
-    local direction = (myPos - targetPos).Unit
-    if direction.Magnitude < 0.1 then
-        direction = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)).Unit
-    end
-    
-    if (myPos - targetPos).Magnitude < 5 then
-        direction = (targetHRP.CFrame.LookVector * -1).Unit
-    end
-    
-    local newPos = targetPos + direction * ATTACH_DISTANCE
-    
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {myChar, targetPlayer.Character}
-    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-    
-    local rayOrigin = newPos + Vector3.new(0, 50, 0)
-    local rayDirection = Vector3.new(0, -100, 0)
-    local result = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-    
-    if result then
-        local groundPos = result.Position
-        if (groundPos - newPos).Magnitude < 10 then
-            newPos = groundPos + Vector3.new(0, 3, 0)
-        end
-    end
-    
-    myHRP.CFrame = CFrame.new(newPos, targetHRP.Position)
-    print("✅ Teleported to: " .. targetPlayer.Name .. " (10 studs away)")
+    myHRP.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
+    print("✅ Teleported to: " .. target.Name)
     return true
 end
 
+-- ============================================
+-- ATTACH FUNCTION (FIXED - 0.5s Checking)
+-- ============================================
 local function AttachToPlayer(targetPlayer)
+    if not targetPlayer then
+        print("❌ No target player selected")
+        return false
+    end
+    
+    local target = Players:FindFirstChild(targetPlayer)
+    if not target then
+        print("❌ Player not found: " .. targetPlayer)
+        return false
+    end
+    
+    -- Wait for target character with 0.5s checks
+    local targetChar = target.Character
+    local attempts = 0
+    while not targetChar and attempts < 10 do
+        task.wait(0.5)
+        targetChar = target.Character
+        attempts = attempts + 1
+    end
+    
+    if not targetChar then
+        print("❌ Target character failed to load")
+        return false
+    end
+    
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    if not targetHRP then
+        print("❌ Target has no HumanoidRootPart - character may be dead")
+        return false
+    end
+    
     if isAttached then
         DetachFromPlayer()
     end
     
-    if not targetPlayer or not targetPlayer.Character then
-        print("❌ Player not found or no character")
-        return false
-    end
-    
-    local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not targetHRP then
-        print("❌ Target has no HumanoidRootPart")
-        return false
-    end
-    
-    attachedPlayer = targetPlayer
+    attachedPlayer = target
     isAttached = true
     
     task.spawn(function()
@@ -918,59 +923,46 @@ local function AttachToPlayer(targetPlayer)
     end
     
     attachmentConnection = RunService.Heartbeat:Connect(function()
-        if not isAttached or not attachedPlayer or not attachedPlayer.Character then
+        if not isAttached or not attachedPlayer then
             DetachFromPlayer()
             return
         end
         
+        if not attachedPlayer.Parent then
+            DetachFromPlayer()
+            return
+        end
+        
+        local targetChar = attachedPlayer.Character
+        if not targetChar then
+            return
+        end
+        
+        local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+        if not targetHRP then
+            return
+        end
+        
         local myChar = player.Character
-        if not myChar then return end
+        if not myChar then
+            return
+        end
         
         local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-        local targetHRP = attachedPlayer.Character:FindFirstChild("HumanoidRootPart")
-        
-        if myHRP and targetHRP then
-            local targetPos = targetHRP.Position
-            local myPos = myHRP.Position
-            
-            local currentDistance = (myPos - targetPos).Magnitude
-            
-            if currentDistance < (ATTACH_DISTANCE - 1) or currentDistance > (ATTACH_DISTANCE + 1) then
-                local direction = (myPos - targetPos).Unit
-                
-                if currentDistance < 3 or direction.Magnitude < 0.1 then
-                    direction = (targetHRP.CFrame.LookVector * -1).Unit
-                end
-                
-                local newPos = targetPos + direction * ATTACH_DISTANCE
-                
-                local raycastParams = RaycastParams.new()
-                raycastParams.FilterDescendantsInstances = {myChar, attachedPlayer.Character}
-                raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-                
-                local rayOrigin = newPos + Vector3.new(0, 50, 0)
-                local rayDirection = Vector3.new(0, -100, 0)
-                local result = Workspace:Raycast(rayOrigin, rayDirection, raycastParams)
-                
-                if result then
-                    local groundPos = result.Position
-                    if (groundPos - newPos).Magnitude < 10 then
-                        newPos = groundPos + Vector3.new(0, 3, 0)
-                    end
-                end
-                
-                myHRP.CFrame = CFrame.new(newPos, targetHRP.Position)
-            end
-            
-            local lookAtCFrame = CFrame.lookAt(myHRP.Position, targetHRP.Position)
-            myHRP.CFrame = lookAtCFrame
+        if not myHRP then
+            return
         end
+        
+        myHRP.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
     end)
     
-    print("✅ Attached to: " .. targetPlayer.Name .. " (10 studs away)")
+    print("✅ Attached to: " .. target.Name)
     return true
 end
 
+-- ============================================
+-- DETACH FUNCTION
+-- ============================================
 local function DetachFromPlayer()
     isAttached = false
     attachedPlayer = nil
@@ -1112,7 +1104,7 @@ local playerDropdown = AddDropdown("Select Player", GetPlayerNames(), GetPlayerN
     
     if statusLabel then
         if isAttached and attachedPlayer and attachedPlayer.Name == value then
-            statusLabel.Text = "📌 Status: Attached to " .. value .. " (10 studs)"
+            statusLabel.Text = "📌 Status: Attached to " .. value
             statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
         else
             statusLabel.Text = "📌 Status: Selected " .. value
@@ -1162,14 +1154,14 @@ AddButton("📍 Teleport to Player", "Instantly teleports you to the selected pl
         statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
     end
     
-    local success = TeleportToPlayer(target)
+    local success = TeleportToPlayer(selectedTargetName)
     
     if success then
         if isAttached and attachedPlayer and attachedPlayer.Name == selectedTargetName then
-            statusLabel.Text = "📌 Status: Attached to " .. selectedTargetName .. " (10 studs)"
+            statusLabel.Text = "📌 Status: Attached to " .. selectedTargetName
             statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
         else
-            statusLabel.Text = "✅ Teleported to " .. selectedTargetName .. " (10 studs)"
+            statusLabel.Text = "✅ Teleported to " .. selectedTargetName
             statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
         end
     else
@@ -1196,10 +1188,10 @@ AddButton("🔗 Attach to Player", "Follows the selected player continuously", f
         statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
     end
     
-    local success = AttachToPlayer(target)
+    local success = AttachToPlayer(selectedTargetName)
     
     if success then
-        statusLabel.Text = "🔗 Attached to " .. selectedTargetName .. " (10 studs)"
+        statusLabel.Text = "🔗 Attached to " .. selectedTargetName
         statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
     else
         statusLabel.Text = "❌ Failed to attach to " .. selectedTargetName
@@ -1237,7 +1229,7 @@ AddButton("🔄 Refresh Players", "Updates the player list", function()
         statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
         task.wait(1)
         if isAttached and attachedPlayer then
-            statusLabel.Text = "📌 Status: Attached to " .. attachedPlayer.Name .. " (10 studs)"
+            statusLabel.Text = "📌 Status: Attached to " .. attachedPlayer.Name
             statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
         elseif selectedTargetName and selectedTargetName ~= "No players found" then
             statusLabel.Text = "📌 Status: Selected " .. selectedTargetName
