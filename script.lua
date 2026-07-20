@@ -1,6 +1,6 @@
 -- ============================================
--- MODERN UI - Custom Color Theme
--- Hex: #221C35 | RGB: (152,29,151) | CMYK: (100,100,10,79)
+-- MODERN UI - Custom Color Theme with Overlay Dropdown
+-- Hex: #221C35 | RGB: (152,29,151)
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -269,6 +269,7 @@ Content.Size = UDim2.new(1, -160, 1, -55)
 Content.CanvasSize = UDim2.new(0, 0, 0, 0)
 Content.ScrollBarThickness = 4
 Content.ScrollBarImageColor3 = BORDER
+Content.ClipsDescendants = true  -- Keep content clipped
 
 -- Tab system
 local currentTab = nil
@@ -317,6 +318,7 @@ local function CreateTab(name, icon)
     tabContainer.Size = UDim2.new(1, 0, 0, 0)
     tabContainer.Visible = false
     tabContainer.ZIndex = 15
+    tabContainer.ClipsDescendants = false  -- Allow dropdown to overflow
     
     tabContents[name] = {
         container = tabContainer,
@@ -472,6 +474,7 @@ local function AddButton(text, desc, callback)
     frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 50)
     RoundCorners(frame, 10)
+    frame.ClipsDescendants = false  -- Allow dropdown to overflow
     
     local elemStroke = Instance.new("UIStroke")
     elemStroke.Parent = frame
@@ -515,6 +518,7 @@ local function AddButton(text, desc, callback)
     btn.TextColor3 = TEXT
     btn.TextSize = 13
     RoundCorners(btn, 8)
+    btn.ZIndex = 51
     
     btn.MouseButton1Click:Connect(callback)
     btn.MouseEnter:Connect(function()
@@ -603,7 +607,7 @@ local function AddToggle(text, default, callback)
 end
 
 -- ============================================
--- OVERLAY DROPDOWN
+-- OVERLAY DROPDOWN (Fixes the issue)
 -- ============================================
 local function AddDropdown(text, options, default, callback)
     local data = tabContents[currentTab]
@@ -614,6 +618,7 @@ local function AddDropdown(text, options, default, callback)
     local selected = default or options[1] or "Select"
     local isOpen = false
     
+    -- Main frame - NO CLIPPING
     local frame = Instance.new("Frame")
     frame.Parent = container
     frame.BackgroundColor3 = ELEMBG
@@ -622,7 +627,7 @@ local function AddDropdown(text, options, default, callback)
     frame.Position = UDim2.new(0, 15, 0, y)
     frame.Size = UDim2.new(1, -30, 0, 50)
     RoundCorners(frame, 10)
-    frame.ClipsDescendants = false
+    frame.ClipsDescendants = false  -- CRITICAL: Allow dropdown to overflow
     frame.ZIndex = 50
     
     local elemStroke = Instance.new("UIStroke")
@@ -631,6 +636,7 @@ local function AddDropdown(text, options, default, callback)
     elemStroke.Thickness = 1
     elemStroke.Transparency = 0.2
     
+    -- Label
     local label = Instance.new("TextLabel")
     label.Parent = frame
     label.BackgroundTransparency = 1
@@ -643,6 +649,7 @@ local function AddDropdown(text, options, default, callback)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.ZIndex = 51
     
+    -- Dropdown button
     local dropdownBtn = Instance.new("TextButton")
     dropdownBtn.Parent = frame
     dropdownBtn.BackgroundColor3 = Color3.fromRGB(45, 25, 60)
@@ -662,6 +669,7 @@ local function AddDropdown(text, options, default, callback)
     textPad.Parent = dropdownBtn
     textPad.PaddingLeft = UDim.new(0, 10)
     
+    -- Arrow
     local arrow = Instance.new("TextLabel")
     arrow.Parent = dropdownBtn
     arrow.BackgroundTransparency = 1
@@ -674,7 +682,7 @@ local function AddDropdown(text, options, default, callback)
     arrow.TextXAlignment = Enum.TextXAlignment.Center
     arrow.ZIndex = 52
     
-    -- Overlay list
+    -- OVERLAY LIST (Parented to ScreenGui with HIGH ZIndex)
     local listFrame = Instance.new("ScrollingFrame")
     listFrame.Name = "DropdownOverlay"
     listFrame.Parent = ScreenGui
@@ -687,15 +695,17 @@ local function AddDropdown(text, options, default, callback)
     listFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
     listFrame.ScrollBarThickness = 4
     listFrame.ScrollBarImageColor3 = ACCENT_DARK
-    listFrame.ZIndex = 100
+    listFrame.ZIndex = 100  -- HIGH ZIndex to overlay everything
     RoundCorners(listFrame, 8)
     
+    -- Border for list
     local listStroke = Instance.new("UIStroke")
     listStroke.Parent = listFrame
     listStroke.Color = BORDER
     listStroke.Thickness = 1
     listStroke.Transparency = 0.3
     
+    -- Shadow for list
     local listShadow = Instance.new("Frame")
     listShadow.Parent = listFrame
     listShadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -710,6 +720,7 @@ local function AddDropdown(text, options, default, callback)
     listLayout.Parent = listFrame
     listLayout.Padding = UDim.new(0, 2)
     
+    -- Update list function
     local function updateList()
         for _, child in pairs(listFrame:GetChildren()) do
             if child:IsA("TextButton") or child:IsA("Frame") then
@@ -779,9 +790,11 @@ local function AddDropdown(text, options, default, callback)
         listFrame.Size = UDim2.new(0, 400, 0, listHeight)
     end
     
+    -- Toggle dropdown with overlay positioning
     dropdownBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
+            -- Position the overlay list below the dropdown button
             local absPos = dropdownBtn.AbsolutePosition
             local absSize = dropdownBtn.AbsoluteSize
             
@@ -790,6 +803,7 @@ local function AddDropdown(text, options, default, callback)
             arrow.Text = "▲"
             updateList()
             
+            -- Make sure list stays within screen bounds
             local viewportSize = game:GetService("Workspace").CurrentCamera.ViewportSize
             local listPos = listFrame.AbsolutePosition
             local listSize = listFrame.AbsoluteSize
@@ -806,6 +820,7 @@ local function AddDropdown(text, options, default, callback)
         end
     end)
     
+    -- Close dropdown when clicking outside
     UserInputService.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             if isOpen then
