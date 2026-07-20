@@ -1,5 +1,5 @@
 -- ============================================
--- MODERN UI - Persistent Tab Content (No Clearing)
+-- MODERN UI - Custom Purple Background (#330140)
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -13,6 +13,19 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
+
+-- ============================================
+-- COLORS
+-- ============================================
+local BACKGROUND = Color3.fromRGB(51, 1, 64)  -- #330140
+local TOPBAR = Color3.fromRGB(60, 10, 75)     -- Slightly lighter purple
+local TABBG = Color3.fromRGB(45, 5, 58)       -- Darker purple for tabs
+local ELEMBG = Color3.fromRGB(55, 8, 70)      -- Element background
+local ELEMBGHOVER = Color3.fromRGB(65, 15, 80) -- Element hover
+local ACCENT = Color3.fromRGB(150, 80, 200)   -- Purple accent
+local BORDER = Color3.fromRGB(100, 50, 130)   -- Border color
+local TEXT = Color3.fromRGB(255, 255, 255)    -- White text
+local TEXTDIM = Color3.fromRGB(200, 180, 210) -- Dim text
 
 -- ============================================
 -- STATE
@@ -38,7 +51,7 @@ end
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainFrame.BackgroundColor3 = BACKGROUND
 MainFrame.BorderSizePixel = 0
 MainFrame.Position = UDim2.new(0.5, -320, 0.5, -220)
 MainFrame.Size = UDim2.new(0, 640, 0, 440)
@@ -51,7 +64,7 @@ RoundCorners(MainFrame, 14)
 -- Border
 local Stroke = Instance.new("UIStroke")
 Stroke.Parent = MainFrame
-Stroke.Color = Color3.fromRGB(80, 80, 120)
+Stroke.Color = BORDER
 Stroke.Thickness = 1
 Stroke.Transparency = 0.3
 
@@ -71,7 +84,7 @@ RoundCorners(Shadow, 14)
 local MinBar = Instance.new("Frame")
 MinBar.Name = "MinBar"
 MinBar.Parent = ScreenGui
-MinBar.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MinBar.BackgroundColor3 = BACKGROUND
 MinBar.BackgroundTransparency = 0
 MinBar.BorderSizePixel = 0
 MinBar.Position = UDim2.new(0.5, -150, 0.95, -20)
@@ -83,7 +96,7 @@ RoundCorners(MinBar, 14)
 -- MinBar Border
 local MinStroke = Instance.new("UIStroke")
 MinStroke.Parent = MinBar
-MinStroke.Color = Color3.fromRGB(80, 80, 120)
+MinStroke.Color = BORDER
 MinStroke.Thickness = 1
 MinStroke.Transparency = 0.3
 
@@ -105,7 +118,7 @@ MinIcon.Position = UDim2.new(0, 12, 0, 0)
 MinIcon.Size = UDim2.new(0, 25, 1, 0)
 MinIcon.Font = Enum.Font.GothamBold
 MinIcon.Text = "⚡"
-MinIcon.TextColor3 = Color3.fromRGB(60, 80, 200)
+MinIcon.TextColor3 = ACCENT
 MinIcon.TextSize = 18
 MinIcon.TextXAlignment = Enum.TextXAlignment.Center
 
@@ -117,7 +130,7 @@ MinTitle.Position = UDim2.new(0, 42, 0, 0)
 MinTitle.Size = UDim2.new(0, 150, 1, 0)
 MinTitle.Font = Enum.Font.GothamBold
 MinTitle.Text = "Script Hub"
-MinTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinTitle.TextColor3 = TEXT
 MinTitle.TextSize = 14
 MinTitle.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -136,14 +149,14 @@ MinStatus.TextXAlignment = Enum.TextXAlignment.Left
 -- MinBar Expand Button
 local MinExpandBtn = Instance.new("TextButton")
 MinExpandBtn.Parent = MinBar
-MinExpandBtn.BackgroundColor3 = Color3.fromRGB(60, 200, 120)
+MinExpandBtn.BackgroundColor3 = ACCENT
 MinExpandBtn.BackgroundTransparency = 0.3
 MinExpandBtn.BorderSizePixel = 0
 MinExpandBtn.Position = UDim2.new(1, -45, 0.5, -15)
 MinExpandBtn.Size = UDim2.new(0, 30, 0, 30)
 MinExpandBtn.Font = Enum.Font.GothamBold
 MinExpandBtn.Text = "□"
-MinExpandBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinExpandBtn.TextColor3 = TEXT
 MinExpandBtn.TextSize = 16
 RoundCorners(MinExpandBtn, 15)
 
@@ -159,7 +172,7 @@ end)
 -- ============================================
 local TopBar = Instance.new("Frame")
 TopBar.Parent = MainFrame
-TopBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+TopBar.BackgroundColor3 = TOPBAR
 TopBar.BackgroundTransparency = 0
 TopBar.BorderSizePixel = 0
 TopBar.Size = UDim2.new(1, 0, 0, 55)
@@ -168,7 +181,7 @@ RoundCorners(TopBar, 14)
 -- Accent line
 local AccentLine = Instance.new("Frame")
 AccentLine.Parent = TopBar
-AccentLine.BackgroundColor3 = Color3.fromRGB(60, 80, 200)
+AccentLine.BackgroundColor3 = ACCENT
 AccentLine.BorderSizePixel = 0
 AccentLine.Position = UDim2.new(0, 0, 1, -2)
 AccentLine.Size = UDim2.new(1, 0, 0, 2)
@@ -181,7 +194,7 @@ Icon.Position = UDim2.new(0, 15, 0, 0)
 Icon.Size = UDim2.new(0, 35, 1, 0)
 Icon.Font = Enum.Font.GothamBold
 Icon.Text = "⚡"
-Icon.TextColor3 = Color3.fromRGB(60, 80, 200)
+Icon.TextColor3 = ACCENT
 Icon.TextSize = 22
 Icon.TextXAlignment = Enum.TextXAlignment.Center
 
@@ -193,7 +206,7 @@ Title.Position = UDim2.new(0, 55, 0, 0)
 Title.Size = UDim2.new(0, 200, 1, 0)
 Title.Font = Enum.Font.GothamBold
 Title.Text = "Script Hub"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextColor3 = TEXT
 Title.TextSize = 19
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -205,7 +218,7 @@ Subtitle.Position = UDim2.new(0, 55, 0, 26)
 Subtitle.Size = UDim2.new(0, 200, 0, 20)
 Subtitle.Font = Enum.Font.Gotham
 Subtitle.Text = "v1.0"
-Subtitle.TextColor3 = Color3.fromRGB(150, 150, 180)
+Subtitle.TextColor3 = TEXTDIM
 Subtitle.TextSize = 12
 Subtitle.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -219,7 +232,7 @@ MinBtn.Position = UDim2.new(1, -45, 0.5, -15)
 MinBtn.Size = UDim2.new(0, 30, 0, 30)
 MinBtn.Font = Enum.Font.GothamBold
 MinBtn.Text = "─"
-MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.TextColor3 = TEXT
 MinBtn.TextSize = 18
 RoundCorners(MinBtn, 15)
 
@@ -235,7 +248,7 @@ end)
 -- ============================================
 local TabContainer = Instance.new("Frame")
 TabContainer.Parent = MainFrame
-TabContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+TabContainer.BackgroundColor3 = TABBG
 TabContainer.BackgroundTransparency = 0
 TabContainer.BorderSizePixel = 0
 TabContainer.Position = UDim2.new(0, 0, 0, 55)
@@ -244,18 +257,17 @@ TabContainer.Size = UDim2.new(0, 160, 1, -55)
 -- Content Area
 local Content = Instance.new("ScrollingFrame")
 Content.Parent = MainFrame
-Content.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+Content.BackgroundColor3 = BACKGROUND
 Content.BackgroundTransparency = 0
 Content.BorderSizePixel = 0
 Content.Position = UDim2.new(0, 160, 0, 55)
 Content.Size = UDim2.new(1, -160, 1, -55)
 Content.CanvasSize = UDim2.new(0, 0, 0, 0)
 Content.ScrollBarThickness = 4
-Content.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 80)
+Content.ScrollBarImageColor3 = Color3.fromRGB(100, 50, 130)
 
 -- Tab system
 local currentTab = nil
-local contentY = 15
 
 -- Table to store tab content frames
 local tabContents = {}
@@ -266,21 +278,21 @@ local tabContents = {}
 local function CreateTab(name, icon)
     local btn = Instance.new("TextButton")
     btn.Parent = TabContainer
-    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    btn.BackgroundColor3 = TABBG
     btn.BackgroundTransparency = 0
     btn.BorderSizePixel = 0
     btn.Position = UDim2.new(0, 5, 0, #TabContainer:GetChildren() * 48 + 10)
     btn.Size = UDim2.new(1, -10, 0, 42)
     btn.Font = Enum.Font.Gotham
     btn.Text = "  " .. icon .. "  " .. name
-    btn.TextColor3 = Color3.fromRGB(180, 180, 200)
+    btn.TextColor3 = TEXTDIM
     btn.TextSize = 14
     btn.TextXAlignment = Enum.TextXAlignment.Left
     RoundCorners(btn, 8)
     
     local indicator = Instance.new("Frame")
     indicator.Parent = btn
-    indicator.BackgroundColor3 = Color3.fromRGB(60, 80, 200)
+    indicator.BackgroundColor3 = ACCENT
     indicator.BorderSizePixel = 0
     indicator.Position = UDim2.new(0, 0, 0.2, 0)
     indicator.Size = UDim2.new(0, 3, 0.6, 0)
@@ -288,11 +300,11 @@ local function CreateTab(name, icon)
     RoundCorners(indicator, 2)
     
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 45, 60)}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = ELEMBGHOVER}):Play()
     end)
     btn.MouseLeave:Connect(function()
         if currentTab ~= name then
-            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 30, 40)}):Play()
+            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = TABBG}):Play()
         end
     end)
     
@@ -320,8 +332,8 @@ local function CreateTab(name, icon)
         -- Hide all tab contents
         for _, data in pairs(tabContents) do
             data.container.Visible = false
-            data.btn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-            data.btn.TextColor3 = Color3.fromRGB(180, 180, 200)
+            data.btn.BackgroundColor3 = TABBG
+            data.btn.TextColor3 = TEXTDIM
             data.indicator.Visible = false
         end
         
@@ -329,8 +341,8 @@ local function CreateTab(name, icon)
         local data = tabContents[name]
         if data then
             data.container.Visible = true
-            data.btn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-            data.btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            data.btn.BackgroundColor3 = ELEMBGHOVER
+            data.btn.TextColor3 = TEXT
             data.indicator.Visible = true
             
             -- Update canvas size
@@ -369,7 +381,7 @@ local function AddSection(text)
     label.Size = UDim2.new(1, 0, 1, 0)
     label.Font = Enum.Font.GothamBold
     label.Text = "▸ " .. text
-    label.TextColor3 = Color3.fromRGB(200, 200, 230)
+    label.TextColor3 = TEXTDIM
     label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
     
@@ -386,7 +398,7 @@ local function AddDivider()
     
     local frame = Instance.new("Frame")
     frame.Parent = container
-    frame.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    frame.BackgroundColor3 = BORDER
     frame.BackgroundTransparency = 0.5
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 20, 0, y)
@@ -415,7 +427,7 @@ local function AddLabel(text, color, size)
     label.Size = UDim2.new(1, 0, 1, 0)
     label.Font = Enum.Font.GothamBold
     label.Text = text
-    label.TextColor3 = color or Color3.fromRGB(255, 255, 255)
+    label.TextColor3 = color or TEXT
     label.TextSize = size or 16
     label.TextXAlignment = Enum.TextXAlignment.Center
     
@@ -442,7 +454,7 @@ local function AddSmallLabel(text, color)
     label.Size = UDim2.new(1, 0, 1, 0)
     label.Font = Enum.Font.Gotham
     label.Text = text
-    label.TextColor3 = color or Color3.fromRGB(150, 150, 180)
+    label.TextColor3 = color or TEXTDIM
     label.TextSize = 12
     label.TextXAlignment = Enum.TextXAlignment.Center
     
@@ -459,7 +471,7 @@ local function AddButton(text, desc, callback)
     
     local frame = Instance.new("Frame")
     frame.Parent = container
-    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    frame.BackgroundColor3 = ELEMBG
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 15, 0, y)
@@ -468,7 +480,7 @@ local function AddButton(text, desc, callback)
     
     local elemStroke = Instance.new("UIStroke")
     elemStroke.Parent = frame
-    elemStroke.Color = Color3.fromRGB(60, 60, 80)
+    elemStroke.Color = BORDER
     elemStroke.Thickness = 1
     elemStroke.Transparency = 0.3
     
@@ -479,7 +491,7 @@ local function AddButton(text, desc, callback)
     label.Size = UDim2.new(0, 250, 0, 22)
     label.Font = Enum.Font.Gotham
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(235, 235, 250)
+    label.TextColor3 = TEXT
     label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
     
@@ -491,30 +503,30 @@ local function AddButton(text, desc, callback)
         descLabel.Size = UDim2.new(0, 250, 0, 20)
         descLabel.Font = Enum.Font.Gotham
         descLabel.Text = desc
-        descLabel.TextColor3 = Color3.fromRGB(150, 150, 180)
+        descLabel.TextColor3 = TEXTDIM
         descLabel.TextSize = 12
         descLabel.TextXAlignment = Enum.TextXAlignment.Left
     end
     
     local btn = Instance.new("TextButton")
     btn.Parent = frame
-    btn.BackgroundColor3 = Color3.fromRGB(60, 80, 200)
+    btn.BackgroundColor3 = ACCENT
     btn.BackgroundTransparency = 0
     btn.BorderSizePixel = 0
     btn.Position = UDim2.new(1, -110, 0.5, -18)
     btn.Size = UDim2.new(0, 95, 0, 36)
     btn.Font = Enum.Font.GothamBold
     btn.Text = "Execute"
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextColor3 = TEXT
     btn.TextSize = 13
     RoundCorners(btn, 8)
     
     btn.MouseButton1Click:Connect(callback)
     btn.MouseEnter:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 100, 220)}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(170, 100, 220)}):Play()
     end)
     btn.MouseLeave:Connect(function()
-        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 80, 200)}):Play()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = ACCENT}):Play()
     end)
     
     data.yPos = data.yPos + 58
@@ -531,7 +543,7 @@ local function AddToggle(text, default, callback)
     
     local frame = Instance.new("Frame")
     frame.Parent = container
-    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    frame.BackgroundColor3 = ELEMBG
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 15, 0, y)
@@ -540,7 +552,7 @@ local function AddToggle(text, default, callback)
     
     local elemStroke = Instance.new("UIStroke")
     elemStroke.Parent = frame
-    elemStroke.Color = Color3.fromRGB(60, 60, 80)
+    elemStroke.Color = BORDER
     elemStroke.Thickness = 1
     elemStroke.Transparency = 0.3
     
@@ -551,7 +563,7 @@ local function AddToggle(text, default, callback)
     label.Size = UDim2.new(0, 280, 1, 0)
     label.Font = Enum.Font.Gotham
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(235, 235, 250)
+    label.TextColor3 = TEXT
     label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
     
@@ -575,7 +587,7 @@ local function AddToggle(text, default, callback)
     local function update(val)
         state = val
         if state then
-            TweenService:Create(toggle, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(60, 200, 120)}):Play()
+            TweenService:Create(toggle, TweenInfo.new(0.3), {BackgroundColor3 = ACCENT}):Play()
             TweenService:Create(indicator, TweenInfo.new(0.3), {Position = UDim2.new(1, -27, 0.5, -12)}):Play()
         else
             TweenService:Create(toggle, TweenInfo.new(0.3), {BackgroundColor3 = Color3.fromRGB(80, 80, 100)}):Play()
@@ -606,7 +618,7 @@ local function AddDropdown(text, options, default, callback)
     
     local frame = Instance.new("Frame")
     frame.Parent = container
-    frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    frame.BackgroundColor3 = ELEMBG
     frame.BackgroundTransparency = 0
     frame.BorderSizePixel = 0
     frame.Position = UDim2.new(0, 15, 0, y)
@@ -616,7 +628,7 @@ local function AddDropdown(text, options, default, callback)
     
     local elemStroke = Instance.new("UIStroke")
     elemStroke.Parent = frame
-    elemStroke.Color = Color3.fromRGB(60, 60, 80)
+    elemStroke.Color = BORDER
     elemStroke.Thickness = 1
     elemStroke.Transparency = 0.3
     
@@ -627,7 +639,7 @@ local function AddDropdown(text, options, default, callback)
     label.Size = UDim2.new(0, 100, 1, 0)
     label.Font = Enum.Font.Gotham
     label.Text = text
-    label.TextColor3 = Color3.fromRGB(235, 235, 250)
+    label.TextColor3 = TEXT
     label.TextSize = 14
     label.TextXAlignment = Enum.TextXAlignment.Left
     
@@ -640,7 +652,7 @@ local function AddDropdown(text, options, default, callback)
     dropdownBtn.Size = UDim2.new(1, -135, 0, 30)
     dropdownBtn.Font = Enum.Font.Gotham
     dropdownBtn.Text = selected
-    dropdownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    dropdownBtn.TextColor3 = TEXT
     dropdownBtn.TextSize = 13
     dropdownBtn.TextXAlignment = Enum.TextXAlignment.Left
     RoundCorners(dropdownBtn, 8)
@@ -652,13 +664,13 @@ local function AddDropdown(text, options, default, callback)
     arrow.Size = UDim2.new(0, 20, 1, 0)
     arrow.Font = Enum.Font.GothamBold
     arrow.Text = "▼"
-    arrow.TextColor3 = Color3.fromRGB(150, 150, 180)
+    arrow.TextColor3 = TEXTDIM
     arrow.TextSize = 12
     arrow.TextXAlignment = Enum.TextXAlignment.Center
     
     local listFrame = Instance.new("ScrollingFrame")
     listFrame.Parent = frame
-    listFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+    listFrame.BackgroundColor3 = TABBG
     listFrame.BackgroundTransparency = 0
     listFrame.BorderSizePixel = 0
     listFrame.Position = UDim2.new(0, 120, 0, 15)
@@ -683,31 +695,31 @@ local function AddDropdown(text, options, default, callback)
         for _, option in ipairs(options) do
             local optBtn = Instance.new("TextButton")
             optBtn.Parent = listFrame
-            optBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+            optBtn.BackgroundColor3 = ELEMBG
             optBtn.BackgroundTransparency = 0
             optBtn.BorderSizePixel = 0
             optBtn.Size = UDim2.new(1, 0, 0, 30)
             optBtn.Font = Enum.Font.Gotham
             optBtn.Text = option
-            optBtn.TextColor3 = Color3.fromRGB(200, 200, 220)
+            optBtn.TextColor3 = TEXTDIM
             optBtn.TextSize = 13
             optBtn.TextXAlignment = Enum.TextXAlignment.Left
             optBtn.Text = "  " .. option
             RoundCorners(optBtn, 4)
             
             if option == selected then
-                optBtn.BackgroundColor3 = Color3.fromRGB(60, 80, 200)
-                optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                optBtn.BackgroundColor3 = ACCENT
+                optBtn.TextColor3 = TEXT
             end
             
             optBtn.MouseEnter:Connect(function()
                 if option ~= selected then
-                    TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(55, 55, 75)}):Play()
+                    TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = ELEMBGHOVER}):Play()
                 end
             end)
             optBtn.MouseLeave:Connect(function()
                 if option ~= selected then
-                    TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(45, 45, 60)}):Play()
+                    TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = ELEMBG}):Play()
                 end
             end)
             
@@ -720,11 +732,11 @@ local function AddDropdown(text, options, default, callback)
                 frame.Size = UDim2.new(1, -30, 0, 45)
                 for _, child in pairs(listFrame:GetChildren()) do
                     if child:IsA("TextButton") then
-                        child.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-                        child.TextColor3 = Color3.fromRGB(200, 200, 220)
+                        child.BackgroundColor3 = ELEMBG
+                        child.TextColor3 = TEXTDIM
                         if child.Text == "  " .. selected then
-                            child.BackgroundColor3 = Color3.fromRGB(60, 80, 200)
-                            child.TextColor3 = Color3.fromRGB(255, 255, 255)
+                            child.BackgroundColor3 = ACCENT
+                            child.TextColor3 = TEXT
                         end
                     end
                 end
@@ -912,10 +924,10 @@ local settingsTab = CreateTab("Settings", "⚙️")
 -- ============================================
 mainTab.select()
 
-AddLabel("═══════════════════════════════════", Color3.fromRGB(60, 80, 200), 14)
+AddLabel("═══════════════════════════════════", ACCENT, 14)
 AddLabel("✨ Script by QueezZy123 (Maryyy) ✨", Color3.fromRGB(255, 200, 100), 18)
 AddLabel("🎮 Games: Driving Empire", Color3.fromRGB(150, 200, 255), 14)
-AddLabel("═══════════════════════════════════", Color3.fromRGB(60, 80, 200), 14)
+AddLabel("═══════════════════════════════════", ACCENT, 14)
 
 AddDivider()
 AddSection("Welcome")
@@ -1092,36 +1104,11 @@ AddButton("Full Bright", "Toggles lighting brightness", function()
 end)
 
 -- ============================================
--- SETTINGS TAB CONTENT
+-- SETTINGS TAB CONTENT (Only Terminate)
 -- ============================================
 settingsTab.select()
-AddSection("UI Settings")
-AddButton("Hide UI", "Hides the interface completely", function()
-    isHidden = true
-    MainFrame.Visible = false
-    MinBar.Visible = false
-end)
-AddButton("Show UI", "Shows the interface", function()
-    isHidden = false
-    if isMinimized then
-        MinBar.Visible = true
-    else
-        MainFrame.Visible = true
-    end
-end)
-AddButton("Minimize UI", "Collapses to a small bar at bottom", function()
-    if not isMinimized then
-        MinimizeUI()
-    end
-end)
-AddButton("Expand UI", "Expands from minimized state", function()
-    if isMinimized then
-        ExpandUI()
-    end
-end)
-AddDivider()
 AddSection("Script Control")
-AddButton("Terminate Script", "⚠️ Stops all script execution", function()
+AddButton("⚠️ Terminate Script", "Stops all script execution", function()
     local confirm = Instance.new("Frame")
     confirm.Parent = MainFrame
     confirm.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -1133,7 +1120,7 @@ AddButton("Terminate Script", "⚠️ Stops all script execution", function()
     
     local box = Instance.new("Frame")
     box.Parent = confirm
-    box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    box.BackgroundColor3 = ELEMBG
     box.BackgroundTransparency = 0
     box.BorderSizePixel = 0
     box.Position = UDim2.new(0.5, -150, 0.5, -60)
@@ -1158,7 +1145,7 @@ AddButton("Terminate Script", "⚠️ Stops all script execution", function()
     descLabel.Size = UDim2.new(1, -20, 0, 20)
     descLabel.Font = Enum.Font.Gotham
     descLabel.Text = "This will stop all script execution."
-    descLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    descLabel.TextColor3 = TEXTDIM
     descLabel.TextSize = 13
     
     local yesBtn = Instance.new("TextButton")
@@ -1170,7 +1157,7 @@ AddButton("Terminate Script", "⚠️ Stops all script execution", function()
     yesBtn.Size = UDim2.new(0, 100, 0, 35)
     yesBtn.Font = Enum.Font.GothamBold
     yesBtn.Text = "Terminate"
-    yesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    yesBtn.TextColor3 = TEXT
     yesBtn.TextSize = 14
     RoundCorners(yesBtn, 8)
     
@@ -1183,7 +1170,7 @@ AddButton("Terminate Script", "⚠️ Stops all script execution", function()
     noBtn.Size = UDim2.new(0, 100, 0, 35)
     noBtn.Font = Enum.Font.GothamBold
     noBtn.Text = "Cancel"
-    noBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    noBtn.TextColor3 = TEXT
     noBtn.TextSize = 14
     RoundCorners(noBtn, 8)
     
