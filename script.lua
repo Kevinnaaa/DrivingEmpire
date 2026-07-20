@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- Fixed: Player List Showing All Players
+-- Complete Working Teleport & Attach
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -40,6 +40,7 @@ local attachedPlayer = nil
 local attachmentConnection = nil
 local deathConnection = nil
 local selectedTargetName = nil
+local selectedPlayer = nil
 
 -- ============================================
 -- CORNER ROUNDING FUNCTION
@@ -608,9 +609,9 @@ local function AddToggle(text, default, callback)
 end
 
 -- ============================================
--- EXPANDING DROPDOWN (FIXED - Shows all players)
+-- PLAYER LIST DROPDOWN (From the source script)
 -- ============================================
-local function AddDropdown(text, options, default, callback)
+local function AddPlayerDropdown(text, options, default, callback)
     local data = tabContents[currentTab]
     if not data then return end
     
@@ -679,7 +680,7 @@ local function AddDropdown(text, options, default, callback)
     arrow.TextXAlignment = Enum.TextXAlignment.Center
     arrow.ZIndex = 52
     
-    -- LIST FRAME (Shows all players)
+    -- SCROLLING PLAYER LIST (From the source script)
     local listFrame = Instance.new("ScrollingFrame")
     listFrame.Parent = frame
     listFrame.BackgroundColor3 = Color3.fromRGB(35, 18, 50)
@@ -704,7 +705,7 @@ local function AddDropdown(text, options, default, callback)
     listLayout.Parent = listFrame
     listLayout.Padding = UDim.new(0, 2)
     
-    -- UPDATE LIST (Shows ALL players)
+    -- Update list (fetches players directly like the source script)
     local function updateList()
         -- Clear old buttons
         for _, child in pairs(listFrame:GetChildren()) do
@@ -715,75 +716,82 @@ local function AddDropdown(text, options, default, callback)
         
         local totalHeight = 0
         
-        -- Get current player names
-        local currentOptions = {}
+        -- Get all players (like the source script)
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= player then
-                table.insert(currentOptions, plr.Name)
-            end
-        end
-        if #currentOptions == 0 then
-            table.insert(currentOptions, "No players found")
-        end
-        
-        -- Create button for each player
-        for _, option in ipairs(currentOptions) do
-            local optBtn = Instance.new("TextButton")
-            optBtn.Parent = listFrame
-            optBtn.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
-            optBtn.BackgroundTransparency = 0
-            optBtn.BorderSizePixel = 0
-            optBtn.Size = UDim2.new(1, 0, 0, 32)
-            optBtn.Font = Enum.Font.Gotham
-            optBtn.Text = "  " .. option
-            optBtn.TextColor3 = TEXT
-            optBtn.TextSize = 13
-            optBtn.TextXAlignment = Enum.TextXAlignment.Left
-            RoundCorners(optBtn, 4)
-            optBtn.ZIndex = 101
-            
-            -- Hover effect
-            optBtn.MouseEnter:Connect(function()
-                if option ~= selected then
-                    TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = ELEMBGHOVER}):Play()
-                end
-            end)
-            optBtn.MouseLeave:Connect(function()
-                if option ~= selected then
-                    TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(40, 22, 55)}):Play()
-                end
-            end)
-            
-            -- Highlight selected
-            if option == selected then
-                optBtn.BackgroundColor3 = ACCENT
+                -- Create player card (like the source script)
+                local optBtn = Instance.new("TextButton")
+                optBtn.Parent = listFrame
+                optBtn.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
+                optBtn.BackgroundTransparency = 0
+                optBtn.BorderSizePixel = 0
+                optBtn.Size = UDim2.new(1, 0, 0, 32)
+                optBtn.Font = Enum.Font.Gotham
+                optBtn.Text = "  " .. plr.Name
                 optBtn.TextColor3 = TEXT
-            end
-            
-            -- Click handler
-            optBtn.MouseButton1Click:Connect(function()
-                selected = option
-                dropdownBtn.Text = option
-                if callback then callback(option) end
-                isOpen = false
-                listFrame.Visible = false
-                frame.Size = UDim2.new(1, -30, 0, 50)
+                optBtn.TextSize = 13
+                optBtn.TextXAlignment = Enum.TextXAlignment.Left
+                RoundCorners(optBtn, 4)
+                optBtn.ZIndex = 101
                 
-                -- Update selection highlight
-                for _, child in pairs(listFrame:GetChildren()) do
-                    if child:IsA("TextButton") then
-                        child.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
-                        child.TextColor3 = TEXT
-                        if child.Text == "  " .. selected then
-                            child.BackgroundColor3 = ACCENT
+                -- Hover effect
+                optBtn.MouseEnter:Connect(function()
+                    if plr.Name ~= selected then
+                        TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = ELEMBGHOVER}):Play()
+                    end
+                end)
+                optBtn.MouseLeave:Connect(function()
+                    if plr.Name ~= selected then
+                        TweenService:Create(optBtn, TweenInfo.new(0.1), {BackgroundColor3 = Color3.fromRGB(40, 22, 55)}):Play()
+                    end
+                end)
+                
+                -- Highlight selected
+                if plr.Name == selected then
+                    optBtn.BackgroundColor3 = ACCENT
+                    optBtn.TextColor3 = TEXT
+                end
+                
+                -- Click handler
+                optBtn.MouseButton1Click:Connect(function()
+                    selected = plr.Name
+                    selectedPlayer = plr
+                    dropdownBtn.Text = plr.Name
+                    if callback then callback(plr.Name) end
+                    isOpen = false
+                    listFrame.Visible = false
+                    frame.Size = UDim2.new(1, -30, 0, 50)
+                    
+                    -- Update selection highlight
+                    for _, child in pairs(listFrame:GetChildren()) do
+                        if child:IsA("TextButton") then
+                            child.BackgroundColor3 = Color3.fromRGB(40, 22, 55)
                             child.TextColor3 = TEXT
+                            if child.Text == "  " .. selected then
+                                child.BackgroundColor3 = ACCENT
+                                child.TextColor3 = TEXT
+                            end
                         end
                     end
-                end
-                arrow.Text = "▼"
-            end)
-            
-            totalHeight = totalHeight + 34
+                    arrow.Text = "▼"
+                end)
+                
+                totalHeight = totalHeight + 34
+            end
+        end
+        
+        -- If no players found
+        if totalHeight == 0 then
+            local noPlayers = Instance.new("TextLabel")
+            noPlayers.Parent = listFrame
+            noPlayers.BackgroundTransparency = 1
+            noPlayers.Size = UDim2.new(1, 0, 0, 32)
+            noPlayers.Font = Enum.Font.Gotham
+            noPlayers.Text = "  No players found"
+            noPlayers.TextColor3 = TEXTDIM
+            noPlayers.TextSize = 13
+            noPlayers.TextXAlignment = Enum.TextXAlignment.Left
+            totalHeight = 34
         end
         
         listFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
@@ -795,7 +803,7 @@ local function AddDropdown(text, options, default, callback)
     dropdownBtn.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
-            updateList() -- Refresh list when opening
+            updateList()
             local listHeight = listFrame.CanvasSize.Y.Offset
             local newHeight = 50 + math.min(listHeight, 150) + 10
             frame.Size = UDim2.new(1, -30, 0, newHeight)
@@ -836,37 +844,34 @@ local function AddDropdown(text, options, default, callback)
         end,
         refresh = function()
             updateList()
-        end
+        end,
+        getSelected = function() return selected end
     }
 end
 
 -- ============================================
--- TELEPORT FUNCTION
+-- TELEPORT FUNCTION (From the source script)
 -- ============================================
-local function TeleportToPlayer(targetName)
-    if not targetName or targetName == "No players found" then
+local function TeleportToPlayer(targetPlayer)
+    if not targetPlayer then
         print("❌ No target player selected")
         return false
     end
     
-    local target = Players:FindFirstChild(targetName)
+    -- Find the target player
+    local target = Players:FindFirstChild(targetPlayer)
     if not target then
-        print("❌ Player not found: " .. targetName)
+        print("❌ Player not found: " .. targetPlayer)
         return false
-    end
-    
-    local targetChar = target.Character
-    if not targetChar then
-        print("❌ Target has no character")
-        return false
-    end
-    
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    end    
+    -- Get target HumanoidRootPart
+    local targetHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
     if not targetHRP then
         print("❌ Target has no HumanoidRootPart")
         return false
     end
     
+    -- Teleport using MoveTo (from the source script)
     local myChar = player.Character
     if not myChar then
         print("❌ You have no character")
@@ -879,7 +884,7 @@ local function TeleportToPlayer(targetName)
 end
 
 -- ============================================
--- ATTACH FUNCTION
+-- ATTACH FUNCTION (From the source script)
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -898,7 +903,7 @@ local function StopFollowing()
 end
 
 local function AttachToPlayer(targetName)
-    if not targetName or targetName == "No players found" then
+    if not targetName then
         print("❌ No target player selected")
         return false
     end
@@ -909,13 +914,7 @@ local function AttachToPlayer(targetName)
         return false
     end
     
-    local targetChar = target.Character
-    if not targetChar then
-        print("❌ Target has no character")
-        return false
-    end
-    
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    local targetHRP = target.Character and target.Character:FindFirstChild("HumanoidRootPart")
     if not targetHRP then
         print("❌ Target has no HumanoidRootPart")
         return false
@@ -928,6 +927,7 @@ local function AttachToPlayer(targetName)
     attachedPlayer = target
     isAttached = true
     
+    -- Death detection (from the source script)
     local function onPlayerDeath()
         print("⚠️ Player died - detaching...")
         StopFollowing()
@@ -972,6 +972,7 @@ local function AttachToPlayer(targetName)
             return
         end
         
+        -- Attach using MoveTo (from the source script)
         myChar:MoveTo(targetHRP.Position)
     end)
     
@@ -1094,7 +1095,7 @@ local function RefreshDropdown()
     end
 end
 
-local playerDropdown = AddDropdown("Select Player", GetPlayerNames(), GetPlayerNames()[1], function(value)
+local playerDropdown = AddPlayerDropdown("Select Player", GetPlayerNames(), GetPlayerNames()[1], function(value)
     selectedTargetName = value
     print("📌 Selected:", value)
     
