@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- Fixed: Teleport & Attach Functions (No Area Limit)
+-- FIXED: Proper Teleport & Attach Functions
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -36,11 +36,14 @@ local TEXTDIM = Color3.fromRGB(200, 180, 220)
 local isMinimized = false
 local isHidden = false
 local isAttached = false
+local isTeleporting = false
 local attachedPlayer = nil
 local attachmentConnection = nil
 local deathConnection = nil
+local teleportLoopConnection = nil
 local selectedTargetName = nil
 local selectedPlayer = nil
+local useTween = true
 
 -- ============================================
 -- CORNER ROUNDING FUNCTION
@@ -223,7 +226,7 @@ Subtitle.BackgroundTransparency = 1
 Subtitle.Position = UDim2.new(0, 55, 0, 26)
 Subtitle.Size = UDim2.new(0, 200, 0, 20)
 Subtitle.Font = Enum.Font.Gotham
-Subtitle.Text = "v1.0"
+Subtitle.Text = "v2.0 - Fixed Teleport"
 Subtitle.TextColor3 = TEXTDIM
 Subtitle.TextSize = 12
 Subtitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -838,7 +841,7 @@ local function AddPlayerDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- FIXED TELEPORT FUNCTION (No Area Limit)
+-- FIXED TELEPORT FUNCTION (Actually works)
 -- ============================================
 local function TeleportToPlayer(targetName)
     if not targetName or targetName == "No players found" then
@@ -852,158 +855,101 @@ local function TeleportToPlayer(targetName)
         return false
     end
     
-    -- Wait for target character with retry
-    local targetChar = target.Character
-    local attempts = 0
-    while not targetChar and attempts < 30 do
-        task.wait(0.2)
-        targetChar = target.Character
-        attempts = attempts + 1
-    end
-    
-    if not targetChar then
-        warn("❌ Target has no character - they may be dead or not spawned")
-        return false
-    end
-    
-    -- Wait for HumanoidRootPart
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-    attempts = 0
-    while not targetHRP and attempts < 15 do
-        task.wait(0.2)
-        targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-        attempts = attempts + 1
-    end
-    
-    -- Try alternative root parts if HumanoidRootPart doesn't exist
-    if not targetHRP then
-        local parts = targetChar:GetChildren()
-        for _, part in ipairs(parts) do
-            if part:IsA("BasePart") and part.Name ~= "Head" then
-                targetHRP = part
-                break
-            end
-        end
-    end
+    -- Get target character and HRP
+    local targetChar = target.Character or target.CharacterAdded:Wait()
+    local targetHRP = targetChar:WaitForChild("HumanoidRootPart", 5)
     
     if not targetHRP then
-        warn("❌ Target has no valid root part")
+        warn("❌ Target HRP missing")
         return false
     end
     
-    -- Check if you have a character
-    local myChar = player.Character
-    attempts = 0
-    while not myChar and attempts < 15 do
-        task.wait(0.2)
-        myChar = player.Character
-        attempts = attempts + 1
-    end
+    -- Get your character and HRP
+    local myChar = player.Character or player.CharacterAdded:Wait()
+    local myHRP = myChar:WaitForChild("HumanoidRootPart", 5)
     
-    if not myChar then
-        warn("❌ You have no character")
+    if not myHRP then
+        warn("❌ Your HRP missing")
         return false
     end
     
-    -- ============================================
-    -- SUPER TELEPORT - NO AREA LIMIT
-    -- ============================================
+    -- Check if alive
+    local humanoid = myChar:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        warn("❌ You are dead")
+        return false
+    end
+    
+    -- Target position (slightly above to avoid clipping)
+    local targetCF = targetHRP.CFrame * CFrame.new(0, 5, 0)
+    
+    -- Try multiple times with verification
     local success = false
-    local targetPos = targetHRP.Position
-    local targetCFrame = targetHRP.CFrame
     
-    -- Method 1: Set PrimaryPart CFrame (Bypasses distance checks)
-    pcall(function()
-        if myChar.PrimaryPart then
-            myChar:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 3, 0)))
+    for i = 1, 10 do
+        -- Reset velocity to prevent anti-teleport
+        myHRP.AssemblyLinearVelocity = Vector3.zero
+        myHRP.AssemblyAngularVelocity = Vector3.zero
+        
+        -- Direct CFrame teleport
+        myHRP.CFrame = targetCF
+        
+        task.wait()
+        
+        -- Verify teleport worked
+        if (myHRP.Position - targetHRP.Position).Magnitude < 15 then
+            print("✅ Teleport successful on attempt " .. i)
+            success = true
+            break
+        end
+    end
+    
+    -- If still not successful, try forceful method
+    if not success then
+        warn("⚠️ Normal teleport failed, trying force method...")
+        
+        -- Force position for a short duration
+        local connection
+        local forceSuccess = false
+        
+        connection = RunService.Heartbeat:Connect(function()
+            if not myHRP or not targetHRP then
+                connection:Disconnect()
+                return
+            end
+            
+            myHRP.AssemblyLinearVelocity = Vector3.zero
+            myHRP.AssemblyAngularVelocity = Vector3.zero
+            myHRP.CFrame = targetCF
+            
+            if (myHRP.Position - targetHRP.Position).Magnitude < 15 then
+                forceSuccess = true
+                connection:Disconnect()
+            end
+        end)
+        
+        task.wait(0.5)
+        if connection then
+            connection:Disconnect()
+        end
+        
+        if forceSuccess then
+            print("✅ Force teleport successful")
             success = true
         end
-    end)
-    
-    -- Method 2: Force CFrame on HumanoidRootPart
-    if not success then
-        pcall(function()
-            local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-            if myHRP and myHRP:IsA("BasePart") then
-                -- Disable collisions temporarily for smooth teleport
-                myHRP.CanCollide = false
-                myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                task.wait(0.05)
-                myHRP.CanCollide = true
-                success = true
-            end
-        end)
-    end
-    
-    -- Method 3: Teleport all body parts (bypasses root part restrictions)
-    if not success then
-        pcall(function()
-            local parts = myChar:GetDescendants()
-            for _, part in ipairs(parts) do
-                if part:IsA("BasePart") then
-                    local offset = part.Position - (myChar.PrimaryPart and myChar.PrimaryPart.Position or Vector3.new(0, 0, 0))
-                    part.CFrame = CFrame.new(targetPos + offset + Vector3.new(0, 3, 0))
-                end
-            end
-            success = true
-        end)
-    end
-    
-    -- Method 4: Velocity-based teleport (for games that block CFrame changes)
-    if not success then
-        pcall(function()
-            local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-            if myHRP and myHRP:IsA("BasePart") and myChar:FindFirstChild("Humanoid") then
-                local humanoid = myChar:FindFirstChild("Humanoid")
-                -- Move using velocity to avoid anti-teleport
-                myHRP.Velocity = (targetPos - myHRP.Position) * 10
-                task.wait(0.1)
-                myHRP.Velocity = Vector3.new(0, 0, 0)
-                myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                success = true
-            end
-        end)
-    end
-    
-    -- Method 5: Tween teleport (bypasses area limit by tweening)
-    if not success then
-        pcall(function()
-            local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-            if myHRP then
-                local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Linear)
-                local tween = TweenService:Create(myHRP, tweenInfo, {
-                    CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                })
-                tween:Play()
-                tween.Completed:Wait()
-                success = true
-            end
-        end)
-    end
-    
-    -- Method 6: Teleport with CFrame on all parts (last resort)
-    if not success then
-        pcall(function()
-            for _, part in ipairs(myChar:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                end
-            end
-            success = true
-        end)
     end
     
     if success then
         print("✅ Teleported to: " .. target.Name)
         return true
     else
-        warn("❌ All teleport methods failed")
+        warn("❌ Teleport failed after all attempts")
         return false
     end
 end
 
 -- ============================================
--- FIXED ATTACH FUNCTION (No Area Limit)
+-- FIXED ATTACH FUNCTION (Actually attaches)
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -1033,45 +979,24 @@ local function AttachToPlayer(targetName)
         return false
     end
     
-    -- Wait for target character with retry
-    local targetChar = target.Character
-    local attempts = 0
-    while not targetChar and attempts < 30 do
-        task.wait(0.2)
-        targetChar = target.Character
-        attempts = attempts + 1
-    end
+    -- Get target character and HRP
+    local targetChar = target.Character or target.CharacterAdded:Wait()
+    local targetHRP = targetChar:WaitForChild("HumanoidRootPart", 5)
     
-    if not targetChar then
-        warn("❌ Target has no character - they may be dead or not spawned")
+    if not targetHRP then
+        warn("❌ Target HRP missing")
         return false
     end
     
-    -- Wait for HumanoidRootPart
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-    attempts = 0
-    while not targetHRP and attempts < 15 do
-        task.wait(0.2)
-        targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-        attempts = attempts + 1
-    end
+    -- Get your character
+    local myChar = player.Character or player.CharacterAdded:Wait()
     
-    -- Try alternative root parts
-    if not targetHRP then
-        local parts = targetChar:GetChildren()
-        for _, part in ipairs(parts) do
-            if part:IsA("BasePart") and part.Name ~= "Head" then
-                targetHRP = part
-                break
-            end
-        end
-    end
-    
-    if not targetHRP then
-        warn("❌ Target has no valid root part")
+    if not myChar then
+        warn("❌ You have no character")
         return false
     end
     
+    -- Stop existing attachment
     if isAttached then
         StopFollowing()
     end
@@ -1084,13 +1009,16 @@ local function AttachToPlayer(targetName)
         StopFollowing()
     end
     
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
+    -- Connect death event
+    local myHumanoid = myChar:FindFirstChild("Humanoid")
+    if myHumanoid then
         if deathConnection then
             deathConnection:Disconnect()
         end
-        deathConnection = player.Character.Humanoid.Died:Connect(onPlayerDeath)
+        deathConnection = myHumanoid.Died:Connect(onPlayerDeath)
     end
     
+    -- Start attachment loop
     if attachmentConnection then
         attachmentConnection:Disconnect()
         attachmentConnection = nil
@@ -1115,7 +1043,7 @@ local function AttachToPlayer(targetName)
         
         local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
         if not targetHRP then
-            -- Try alternative
+            -- Try alternative parts
             local parts = targetChar:GetChildren()
             for _, part in ipairs(parts) do
                 if part:IsA("BasePart") and part.Name ~= "Head" then
@@ -1131,41 +1059,27 @@ local function AttachToPlayer(targetName)
             return
         end
         
-        -- ============================================
-        -- SUPER ATTACH - NO AREA LIMIT
-        -- ============================================
-        local success = false
-        local targetPos = targetHRP.Position
-        
-        -- Method 1: SetPrimaryPartCFrame
-        pcall(function()
-            if myChar.PrimaryPart then
-                myChar:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 3, 0)))
-                success = true
-            end
-        end)
-        
-        -- Method 2: Direct CFrame on HumanoidRootPart
-        if not success then
-            pcall(function()
-                local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-                if myHRP and myHRP:IsA("BasePart") then
-                    myHRP.CanCollide = false
-                    myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                    task.wait(0.05)
-                    myHRP.CanCollide = true
-                    success = true
-                end
-            end)
+        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+        if not myHRP then
+            return
         end
         
-        -- Method 3: MoveTo (fallback)
-        if not success then
-            pcall(function()
-                myChar:MoveTo(targetPos)
-                success = true
-            end)
+        -- Check if alive
+        local humanoid = myChar:FindFirstChild("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then
+            return
         end
+        
+        -- Reset velocity and attach
+        myHRP.AssemblyLinearVelocity = Vector3.zero
+        myHRP.AssemblyAngularVelocity = Vector3.zero
+        
+        -- Position: BEHIND target (super close)
+        local targetPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 1.5)
+        local targetCF = CFrame.new(targetPos, targetHRP.Position)
+        
+        -- Direct CFrame attachment
+        myHRP.CFrame = targetCF
     end)
     
     print("✅ Attached to: " .. target.Name)
@@ -1325,7 +1239,7 @@ securityTab.setY(securityTab.getY() + 35)
 
 AddDivider()
 
--- Teleport Button
+-- Teleport Button (FIXED)
 AddButton("📍 Teleport to Player", "Instantly teleports you to the selected player", function()
     if not selectedTargetName or selectedTargetName == "No players found" then
         warn("❌ No player selected")
@@ -1353,7 +1267,7 @@ AddButton("📍 Teleport to Player", "Instantly teleports you to the selected pl
     end
 end)
 
--- Attach Button
+-- Attach Button (FIXED)
 AddButton("🔗 Attach to Player", "Follows the selected player continuously", function()
     if not selectedTargetName or selectedTargetName == "No players found" then
         warn("❌ No player selected")
@@ -1507,6 +1421,7 @@ AddButton("⚠️ Terminate Script", "Stops all script execution", function()
     
     yesBtn.MouseButton1Click:Connect(function()
         confirm:Destroy()
+        StopFollowing()
         print("Script terminated!")
         ScreenGui:Destroy()
         error("Script terminated by user", 0)
@@ -1622,4 +1537,9 @@ end)
 print("✨ Modern UI loaded successfully!")
 print("📌 Script by QueezZy123")
 print("🎮 Games: Driving Empire")
+print("📌 Features:")
+print("  • Fixed Teleport - Actually works!")
+print("  • Fixed Attach - Actually follows!")
+print("  • Teleport verification")
+print("  • Force teleport fallback")
 print("📌 Click '─' to minimize/expand the UI")
