@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- Fixed: Unlimited Teleport & Attach Functions
+-- Enhanced: Unlimited Teleport + Tween + Attach
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -36,13 +36,15 @@ local TEXTDIM = Color3.fromRGB(200, 180, 220)
 local isMinimized = false
 local isHidden = false
 local isAttached = false
+local isTeleporting = false
 local attachedPlayer = nil
 local attachmentConnection = nil
 local deathConnection = nil
+local teleportLoopConnection = nil
 local selectedTargetName = nil
 local selectedPlayer = nil
-local isTeleporting = false
-local teleportLoopConnection = nil
+local useTween = true
+local tweenDuration = 0.3
 
 -- ============================================
 -- CORNER ROUNDING FUNCTION
@@ -225,7 +227,7 @@ Subtitle.BackgroundTransparency = 1
 Subtitle.Position = UDim2.new(0, 55, 0, 26)
 Subtitle.Size = UDim2.new(0, 200, 0, 20)
 Subtitle.Font = Enum.Font.Gotham
-Subtitle.Text = "v1.0"
+Subtitle.Text = "v2.0 - Enhanced Teleport"
 Subtitle.TextColor3 = TEXTDIM
 Subtitle.TextSize = 12
 Subtitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -840,7 +842,155 @@ local function AddPlayerDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- UNLIMITED TELEPORT FUNCTION
+-- ENHANCED TWEEN TELEPORT FUNCTION
+-- ============================================
+local function TeleportToPlayer(targetName)
+    if not targetName or targetName == "No players found" then
+        warn("❌ No target player selected")
+        return false
+    end
+    
+    local target = Players:FindFirstChild(targetName)
+    if not target then
+        warn("❌ Player not found: " .. targetName)
+        return false
+    end
+    
+    -- Wait for target character with retry
+    local targetChar = target.Character
+    local attempts = 0
+    while not targetChar and attempts < 30 do
+        task.wait(0.2)
+        targetChar = target.Character
+        attempts = attempts + 1
+    end
+    
+    if not targetChar then
+        warn("❌ Target has no character - they may be dead or not spawned")
+        return false
+    end
+    
+    -- Wait for HumanoidRootPart
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    attempts = 0
+    while not targetHRP and attempts < 15 do
+        task.wait(0.2)
+        targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+        attempts = attempts + 1
+    end
+    
+    -- Try alternative root parts if HumanoidRootPart doesn't exist
+    if not targetHRP then
+        local parts = targetChar:GetChildren()
+        for _, part in ipairs(parts) do
+            if part:IsA("BasePart") and part.Name ~= "Head" then
+                targetHRP = part
+                break
+            end
+        end
+    end
+    
+    if not targetHRP then
+        warn("❌ Target has no valid root part")
+        return false
+    end
+    
+    -- Check if you have a character
+    local myChar = player.Character
+    attempts = 0
+    while not myChar and attempts < 15 do
+        task.wait(0.2)
+        myChar = player.Character
+        attempts = attempts + 1
+    end
+    
+    if not myChar then
+        warn("❌ You have no character")
+        return false
+    end
+    
+    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+    if not myHRP then
+        warn("❌ You have no root part")
+        return false
+    end
+    
+    -- Check if alive
+    local humanoid = myChar:FindFirstChild("Humanoid")
+    if not humanoid or humanoid.Health <= 0 then
+        warn("❌ You are dead")
+        return false
+    end
+    
+    -- Calculate position: BEHIND the target (super close)
+    local targetPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 0.5)
+    local targetCFrame = CFrame.new(targetPos, targetHRP.Position)
+    
+    local success = false
+    
+    -- Method 1: Tween teleport (smooth)
+    if useTween then
+        pcall(function()
+            myHRP.CanCollide = false
+            
+            local tweenInfo = TweenInfo.new(
+                tweenDuration,
+                Enum.EasingStyle.Quad,
+                Enum.EasingDirection.Out
+            )
+            
+            local tween = TweenService:Create(myHRP, tweenInfo, {
+                CFrame = targetCFrame
+            })
+            
+            tween:Play()
+            tween.Completed:Wait()
+            
+            myHRP.CanCollide = true
+            success = true
+        end)
+    end
+    
+    -- Method 2: Direct CFrame (instant)
+    if not success then
+        pcall(function()
+            myHRP.CanCollide = false
+            myHRP.CFrame = targetCFrame
+            task.wait(0.05)
+            myHRP.CanCollide = true
+            success = true
+        end)
+    end
+    
+    -- Method 3: SetPrimaryPartCFrame
+    if not success then
+        pcall(function()
+            if myChar.PrimaryPart then
+                myChar:SetPrimaryPartCFrame(targetCFrame)
+                success = true
+            end
+        end)
+    end
+    
+    -- Method 4: MoveTo (fallback)
+    if not success then
+        pcall(function()
+            myChar:MoveTo(targetPos)
+            success = true
+        end)
+    end
+    
+    if success then
+        print("✅ Teleported to: " .. target.Name)
+        return true
+    else
+        warn("❌ All teleport methods failed")
+        return false
+    end
+end
+
+-- ============================================
+-- CONTINUOUS TELEPORT LOOP (Unlimited)
 -- ============================================
 local function StopTeleportLoop()
     if teleportLoopConnection then
@@ -851,7 +1001,7 @@ local function StopTeleportLoop()
     print("🛑 Teleport loop stopped")
 end
 
-local function StartTeleportLoop(targetName, interval)
+local function StartTeleportLoop(targetName)
     if isTeleporting then
         StopTeleportLoop()
     end
@@ -864,11 +1014,10 @@ local function StartTeleportLoop(targetName, interval)
     local target = Players:FindFirstChild(targetName)
     if not target then
         warn("❌ Player not found: " .. targetName)
-        return false    end
+        return false
+    end
     
     isTeleporting = true
-    local teleportInterval = interval or 0.1 -- Teleport every 0.1 seconds
-    
     print("🔄 Starting unlimited teleport loop to: " .. targetName)
     
     teleportLoopConnection = RunService.Heartbeat:Connect(function()
@@ -888,7 +1037,6 @@ local function StartTeleportLoop(targetName, interval)
         
         local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
         if not targetHRP then
-            -- Try alternative parts
             local parts = targetChar:GetChildren()
             for _, part in ipairs(parts) do
                 if part:IsA("BasePart") and part.Name ~= "Head" then
@@ -902,52 +1050,31 @@ local function StartTeleportLoop(targetName, interval)
         local myChar = player.Character
         if not myChar then return end
         
-        local targetPos = targetHRP.Position
+        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+        if not myHRP then return end
         
-        -- Try multiple teleport methods rapidly
+        -- Check if alive
+        local humanoid = myChar:FindFirstChild("Humanoid")
+        if not humanoid or humanoid.Health <= 0 then return end
+        
+        -- BEHIND target (super close)
+        local targetPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 0.5)
+        local targetCFrame = CFrame.new(targetPos, targetHRP.Position)
+        
         local success = false
         
-        -- Method 1: SetPrimaryPartCFrame
+        -- Tween teleport in loop
         pcall(function()
-            if myChar.PrimaryPart then
-                myChar:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 3, 0)))
-                success = true
-            end
+            myHRP.CanCollide = false
+            myHRP.CFrame = targetCFrame
+            task.wait(0.02)
+            myHRP.CanCollide = true
+            success = true
         end)
         
-        -- Method 2: Direct CFrame on HumanoidRootPart
-        if not success then
-            pcall(function()
-                local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-                if myHRP and myHRP:IsA("BasePart") then
-                    myHRP.CanCollide = false
-                    myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                    task.wait(0.01)
-                    myHRP.CanCollide = true
-                    success = true
-                end
-            end)
-        end
-        
-        -- Method 3: MoveTo
         if not success then
             pcall(function()
                 myChar:MoveTo(targetPos)
-                success = true
-            end)
-        end
-        
-        -- Method 4: Velocity teleport
-        if not success then
-            pcall(function()
-                local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-                if myHRP and myHRP:IsA("BasePart") then
-                    myHRP.Velocity = (targetPos - myHRP.Position) * 20
-                    task.wait(0.02)
-                    myHRP.Velocity = Vector3.new(0, 0, 0)
-                    myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                    success = true
-                end
             end)
         end
     end)
@@ -956,7 +1083,7 @@ local function StartTeleportLoop(targetName, interval)
 end
 
 -- ============================================
--- FIXED ATTACH FUNCTION (No Area Limit)
+-- ATTACH FUNCTION
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -1029,6 +1156,11 @@ local function AttachToPlayer(targetName)
         StopFollowing()
     end
     
+    -- Stop teleport loop if running
+    if isTeleporting then
+        StopTeleportLoop()
+    end
+    
     attachedPlayer = target
     isAttached = true
     
@@ -1068,7 +1200,6 @@ local function AttachToPlayer(targetName)
         
         local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
         if not targetHRP then
-            -- Try alternative
             local parts = targetChar:GetChildren()
             for _, part in ipairs(parts) do
                 if part:IsA("BasePart") and part.Name ~= "Head" then
@@ -1084,37 +1215,26 @@ local function AttachToPlayer(targetName)
             return
         end
         
-        -- Super attach - no area limit
-        local success = false
-        local targetPos = targetHRP.Position
+        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+        if not myHRP then return end
         
-        -- Method 1: SetPrimaryPartCFrame
+        -- BEHIND target (super close)
+        local targetPos = targetHRP.Position - (targetHRP.CFrame.LookVector * 0.5)
+        local targetCFrame = CFrame.new(targetPos, targetHRP.Position)
+        
+        local success = false
+        
         pcall(function()
-            if myChar.PrimaryPart then
-                myChar:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 3, 0)))
-                success = true
-            end
+            myHRP.CanCollide = false
+            myHRP.CFrame = targetCFrame
+            task.wait(0.05)
+            myHRP.CanCollide = true
+            success = true
         end)
         
-        -- Method 2: Direct CFrame on HumanoidRootPart
-        if not success then
-            pcall(function()
-                local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-                if myHRP and myHRP:IsA("BasePart") then
-                    myHRP.CanCollide = false
-                    myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                    task.wait(0.05)
-                    myHRP.CanCollide = true
-                    success = true
-                end
-            end)
-        end
-        
-        -- Method 3: MoveTo (fallback)
         if not success then
             pcall(function()
                 myChar:MoveTo(targetPos)
-                success = true
             end)
         end
     end)
@@ -1279,8 +1399,56 @@ securityTab.setY(securityTab.getY() + 35)
 
 AddDivider()
 
--- UNLIMITED Teleport Button
-AddButton("🔄 Unlimited Teleport", "Continuously teleports to player (loop)", function()
+-- Tween Toggle
+local tweenState = true
+AddToggle("Smooth Tween Teleport", true, function(v)
+    useTween = v
+    tweenState = v
+    if statusLabel then
+        statusLabel.Text = v and "✅ Tween enabled" or "⚡ Instant teleport"
+        statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
+        task.wait(1)
+        updateStatusLabel()
+    end
+end)
+
+AddDivider()
+
+-- Teleport Button (with Tween)
+AddButton("🌀 Teleport to Player", "Smooth tween teleport to selected player", function()
+    if not selectedTargetName or selectedTargetName == "No players found" then
+        warn("❌ No player selected")
+        return
+    end
+    
+    -- Stop teleport loop if running
+    if isTeleporting then
+        StopTeleportLoop()
+    end
+    
+    if statusLabel then
+        statusLabel.Text = "🌀 Teleporting to " .. selectedTargetName .. "..."
+        statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+    end
+    
+    local success = TeleportToPlayer(selectedTargetName)
+    
+    if success then
+        if isAttached and attachedPlayer and attachedPlayer.Name == selectedTargetName then
+            statusLabel.Text = "📌 Status: Attached to " .. selectedTargetName
+            statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
+        else
+            statusLabel.Text = "✅ Teleported to " .. selectedTargetName
+            statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
+        end
+    else
+        statusLabel.Text = "❌ Failed to teleport - target may be dead"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
+end)
+
+-- Continuous Teleport Button (Unlimited)
+AddButton("♾️ Unlimited Teleport", "Continuously teleports to player (loop)", function()
     if not selectedTargetName or selectedTargetName == "No players found" then
         warn("❌ No player selected")
         return
@@ -1299,7 +1467,7 @@ AddButton("🔄 Unlimited Teleport", "Continuously teleports to player (loop)", 
     local success = StartTeleportLoop(selectedTargetName)
     
     if success then
-        statusLabel.Text = "🔄 Teleporting to " .. selectedTargetName .. " (unlimited)"
+        statusLabel.Text = "♾️ Teleporting to " .. selectedTargetName .. " (unlimited)"
         statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
     else
         statusLabel.Text = "❌ Failed to start teleport loop"
@@ -1307,88 +1475,21 @@ AddButton("🔄 Unlimited Teleport", "Continuously teleports to player (loop)", 
     end
 end)
 
--- One-time Teleport Button (kept for compatibility)
-AddButton("📍 Teleport Once", "Teleports to player one time", function()
-    if not selectedTargetName or selectedTargetName == "No players found" then
-        warn("❌ No player selected")
-        return
-    end
-    
-    if statusLabel then
-        statusLabel.Text = "📍 Teleporting to " .. selectedTargetName .. "..."
-        statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
-    end
-    
-    -- Use the loop function to teleport once
-    if isTeleporting then
-        StopTeleportLoop()
-    end
-    
-    local target = Players:FindFirstChild(selectedTargetName)
-    if not target then
-        statusLabel.Text = "❌ Player not found"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-        return
-    end
-    
-    local targetChar = target.Character
-    if not targetChar then
-        statusLabel.Text = "❌ Target has no character"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-        return
-    end
-    
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-    if not targetHRP then
-        statusLabel.Text = "❌ Target has no root part"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-        return
-    end
-    
-    local myChar = player.Character
-    if not myChar then
-        statusLabel.Text = "❌ You have no character"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-        return
-    end
-    
-    local targetPos = targetHRP.Position
-    local success = false
-    
-    -- Try multiple methods
-    pcall(function()
-        if myChar.PrimaryPart then
-            myChar:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 3, 0)))
-            success = true
+-- Stop Teleport Button
+AddButton("🛑 Stop Teleport Loop", "Stops the unlimited teleport loop", function()
+    if not isTeleporting then
+        warn("❌ Not teleporting")
+        if statusLabel then
+            statusLabel.Text = "❌ Not teleporting"
+            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
         end
-    end)
-    
-    if not success then
-        pcall(function()
-            local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-            if myHRP then
-                myHRP.CanCollide = false
-                myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
-                task.wait(0.05)
-                myHRP.CanCollide = true
-                success = true
-            end
-        end)
+        return
     end
     
-    if not success then
-        pcall(function()
-            myChar:MoveTo(targetPos)
-            success = true
-        end)
-    end
-    
-    if success then
-        statusLabel.Text = "✅ Teleported to " .. selectedTargetName
-        statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
-    else
-        statusLabel.Text = "❌ Failed to teleport"
-        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    StopTeleportLoop()
+    if statusLabel then
+        statusLabel.Text = "🛑 Teleport loop stopped"
+        statusLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
     end
 end)
 
@@ -1444,26 +1545,6 @@ end)
 
 AddDivider()
 
--- Stop Teleport Button
-AddButton("🛑 Stop Teleport Loop", "Stops the unlimited teleport loop", function()
-    if not isTeleporting then
-        warn("❌ Not teleporting")
-        if statusLabel then
-            statusLabel.Text = "❌ Not teleporting"
-            statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-        end
-        return
-    end
-    
-    StopTeleportLoop()
-    if statusLabel then
-        statusLabel.Text = "🛑 Teleport loop stopped"
-        statusLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-    end
-end)
-
-AddDivider()
-
 -- Refresh Player List Button
 AddButton("🔄 Refresh Players", "Updates the player list", function()
     RefreshDropdown()
@@ -1471,21 +1552,28 @@ AddButton("🔄 Refresh Players", "Updates the player list", function()
         statusLabel.Text = "✅ Player list refreshed!"
         statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
         task.wait(1)
-        if isTeleporting then
-            statusLabel.Text = "🔄 Teleporting to " .. selectedTargetName .. " (unlimited)"
-            statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
-        elseif isAttached and attachedPlayer then
-            statusLabel.Text = "📌 Status: Attached to " .. attachedPlayer.Name
-            statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
-        elseif selectedTargetName and selectedTargetName ~= "No players found" then
-            statusLabel.Text = "📌 Status: Selected " .. selectedTargetName
-            statusLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-        else
-            statusLabel.Text = "📌 Status: No player selected"
-            statusLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
-        end
+        updateStatusLabel()
     end
 end)
+
+-- Helper function to update status label
+local function updateStatusLabel()
+    if not statusLabel then return end
+    
+    if isTeleporting then
+        statusLabel.Text = "♾️ Teleporting to " .. selectedTargetName .. " (unlimited)"
+        statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
+    elseif isAttached and attachedPlayer then
+        statusLabel.Text = "📌 Status: Attached to " .. attachedPlayer.Name
+        statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
+    elseif selectedTargetName and selectedTargetName ~= "No players found" then
+        statusLabel.Text = "📌 Status: Selected " .. selectedTargetName
+        statusLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    else
+        statusLabel.Text = "📌 Status: No player selected"
+        statusLabel.TextColor3 = Color3.fromRGB(200, 200, 220)
+    end
+end
 
 -- ============================================
 -- VISUALS TAB CONTENT
@@ -1693,4 +1781,9 @@ end)
 print("✨ Modern UI loaded successfully!")
 print("📌 Script by QueezZy123")
 print("🎮 Games: Driving Empire")
+print("📌 Features:")
+print("  • Smooth Tween Teleport (toggle on/off)")
+print("  • Unlimited Continuous Teleport")
+print("  • Attach/Detach with super close distance")
+print("  • Always teleports BEHIND the target")
 print("📌 Click '─' to minimize/expand the UI")
