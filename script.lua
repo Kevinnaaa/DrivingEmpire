@@ -838,7 +838,53 @@ local function AddPlayerDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- FIXED TELEPORT FUNCTION (Actually Works)
+-- FIND ROOT PART FUNCTION (Works with any character)
+-- ============================================
+local function FindRootPart(character)
+    if not character then return nil end
+    
+    -- Try common part names
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if rootPart then return rootPart end
+    
+    rootPart = character:FindFirstChild("RootPart")
+    if rootPart then return rootPart end
+    
+    rootPart = character:FindFirstChild("Torso")
+    if rootPart then return rootPart end
+    
+    rootPart = character:FindFirstChild("UpperTorso")
+    if rootPart then return rootPart end
+    
+    -- Try PrimaryPart
+    if character.PrimaryPart then
+        return character.PrimaryPart
+    end
+    
+    -- Find any large body part (not Head)
+    local parts = character:GetChildren()
+    for _, part in ipairs(parts) do
+        if part:IsA("BasePart") and part.Name ~= "Head" and part.Name ~= "Humanoid" then
+            -- Check if it's a reasonable size for a root part
+            local size = part.Size
+            if size.X > 1 and size.Z > 1 then
+                return part
+            end
+        end
+    end
+    
+    -- Last resort: find any BasePart that's not the Head
+    for _, part in ipairs(parts) do
+        if part:IsA("BasePart") and part.Name ~= "Head" then
+            return part
+        end
+    end
+    
+    return nil
+end
+
+-- ============================================
+-- FIXED TELEPORT FUNCTION (Works with any character)
 -- ============================================
 local function TeleportToPlayer(targetName)
     if not targetName or targetName == "No players found" then
@@ -875,28 +921,16 @@ local function TeleportToPlayer(targetName)
         return false
     end
     
-    -- Get HumanoidRootPart
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-    attempts = 0
-    while not targetHRP and attempts < 30 do
-        task.wait(0.1)
-        targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-        attempts = attempts + 1
-    end
+    -- Find target root part using the helper function
+    local targetHRP = FindRootPart(targetChar)
     
-    -- Try alternative parts if HumanoidRootPart doesn't exist
     if not targetHRP then
-        local parts = targetChar:GetChildren()
-        for _, part in ipairs(parts) do
-            if part:IsA("BasePart") and part.Name ~= "Head" then
-                targetHRP = part
-                break
+        warn("❌ Target has no valid root part. Character parts found:")
+        for _, child in pairs(targetChar:GetChildren()) do
+            if child:IsA("BasePart") then
+                warn("  - " .. child.Name)
             end
         end
-    end
-    
-    if not targetHRP then
-        warn("❌ Target has no valid root part")
         return false
     end
     
@@ -914,9 +948,11 @@ local function TeleportToPlayer(targetName)
         return false
     end
     
-    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+    -- Find your root part
+    local myHRP = FindRootPart(myChar)
+    
     if not myHRP then
-        warn("❌ You have no root part")
+        warn("❌ You have no valid root part")
         return false
     end
     
@@ -979,7 +1015,22 @@ local function TeleportToPlayer(targetName)
     end
     
     -- ============================================
-    -- METHOD 3: Force teleport with Heartbeat
+    -- METHOD 3: Try moving all body parts
+    -- ============================================
+    if not success then
+        pcall(function()
+            local parts = myChar:GetChildren()
+            for _, part in ipairs(parts) do
+                if part:IsA("BasePart") and part.Name ~= "Humanoid" then
+                    part.CFrame = targetCF
+                end
+            end
+            success = true
+        end)
+    end
+    
+    -- ============================================
+    -- METHOD 4: Force teleport with Heartbeat
     -- ============================================
     if not success then
         print("⚠️ Using force teleport method...")
@@ -1006,7 +1057,7 @@ local function TeleportToPlayer(targetName)
             end
         end)
         
-        -- Let it run for up to 1 second
+        -- Let it run for up to 1.5 seconds
         local startTime = tick()
         while not forceSuccess and (tick() - startTime) < 1.5 do
             task.wait(0.05)
@@ -1022,7 +1073,7 @@ local function TeleportToPlayer(targetName)
     end
     
     -- ============================================
-    -- METHOD 4: MoveTo (last resort)
+    -- METHOD 5: MoveTo (last resort)
     -- ============================================
     if not success then
         pcall(function()
@@ -1042,7 +1093,7 @@ local function TeleportToPlayer(targetName)
 end
 
 -- ============================================
--- FIXED ATTACH FUNCTION
+-- FIXED ATTACH FUNCTION (Works with any character)
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -1093,17 +1144,11 @@ local function AttachToPlayer(targetName)
         return false
     end
     
-    -- Get HumanoidRootPart
-    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-    attempts = 0
-    while not targetHRP and attempts < 30 do
-        task.wait(0.1)
-        targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-        attempts = attempts + 1
-    end
+    -- Find target root part
+    local targetHRP = FindRootPart(targetChar)
     
     if not targetHRP then
-        warn("❌ Target has no root part")
+        warn("❌ Target has no valid root part")
         return false
     end
     
@@ -1118,6 +1163,14 @@ local function AttachToPlayer(targetName)
     
     if not myChar or not myChar:IsDescendantOf(Workspace) then
         warn("❌ You have no character")
+        return false
+    end
+    
+    -- Find your root part
+    local myHRP = FindRootPart(myChar)
+    
+    if not myHRP then
+        warn("❌ You have no valid root part")
         return false
     end
     
@@ -1177,28 +1230,18 @@ local function AttachToPlayer(targetName)
             return
         end
         
-        local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
-        if not targetHRP then
-            -- Try alternative parts
-            local parts = targetChar:GetChildren()
-            for _, part in ipairs(parts) do
-                if part:IsA("BasePart") and part.Name ~= "Head" then
-                    targetHRP = part
-                    break
-                end
-            end
-            if not targetHRP then return end
-        end
+        -- Find target root part again (in case it changed)
+        local targetHRP = FindRootPart(targetChar)
+        if not targetHRP then return end
         
         local myChar = player.Character
         if not myChar or not myChar:IsDescendantOf(Workspace) then
             return
         end
         
-        local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-        if not myHRP then
-            return
-        end
+        -- Find your root part
+        local myHRP = FindRootPart(myChar)
+        if not myHRP then return end
         
         -- Check if you're alive
         local myHumanoid = myChar:FindFirstChild("Humanoid")
@@ -1674,8 +1717,9 @@ print("✨ Modern UI loaded successfully!")
 print("📌 Script by QueezZy123")
 print("🎮 Games: Driving Empire")
 print("📌 Features:")
-print("  • Fixed Teleport - Actually works!")
-print("  • Fixed Attach - Actually follows!")
+print("  • Fixed Teleport - Works with any character")
+print("  • Fixed Attach - Actually follows")
 print("  • Multiple teleport methods")
 print("  • Force teleport fallback")
+print("  • Works with custom character rigs")
 print("📌 Click '─' to minimize/expand the UI")
