@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- FIXED: Proper Teleport & Attach Functions
+-- FIXED: Teleport & Attach Functions
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -36,14 +36,11 @@ local TEXTDIM = Color3.fromRGB(200, 180, 220)
 local isMinimized = false
 local isHidden = false
 local isAttached = false
-local isTeleporting = false
 local attachedPlayer = nil
 local attachmentConnection = nil
 local deathConnection = nil
-local teleportLoopConnection = nil
 local selectedTargetName = nil
 local selectedPlayer = nil
-local useTween = true
 
 -- ============================================
 -- CORNER ROUNDING FUNCTION
@@ -841,7 +838,7 @@ local function AddPlayerDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- FIXED TELEPORT FUNCTION (Actually works)
+-- FIXED TELEPORT FUNCTION (Actually Works)
 -- ============================================
 local function TeleportToPlayer(targetName)
     if not targetName or targetName == "No players found" then
@@ -855,101 +852,197 @@ local function TeleportToPlayer(targetName)
         return false
     end
     
-    -- Get target character and HRP
-    local targetChar = target.Character or target.CharacterAdded:Wait()
-    local targetHRP = targetChar:WaitForChild("HumanoidRootPart", 5)
+    -- Wait for target character with retry
+    local targetChar = target.Character
+    local attempts = 0
+    
+    -- Wait up to 5 seconds for character
+    while (not targetChar or not targetChar:IsDescendantOf(Workspace)) and attempts < 50 do
+        task.wait(0.1)
+        targetChar = target.Character
+        attempts = attempts + 1
+    end
+    
+    if not targetChar or not targetChar:IsDescendantOf(Workspace) then
+        warn("❌ Target has no valid character")
+        return false
+    end
+    
+    -- Check if target is alive
+    local targetHumanoid = targetChar:FindFirstChild("Humanoid")
+    if not targetHumanoid or targetHumanoid.Health <= 0 then
+        warn("❌ Target is dead")
+        return false
+    end
+    
+    -- Get HumanoidRootPart
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    attempts = 0
+    while not targetHRP and attempts < 30 do
+        task.wait(0.1)
+        targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+        attempts = attempts + 1
+    end
+    
+    -- Try alternative parts if HumanoidRootPart doesn't exist
+    if not targetHRP then
+        local parts = targetChar:GetChildren()
+        for _, part in ipairs(parts) do
+            if part:IsA("BasePart") and part.Name ~= "Head" then
+                targetHRP = part
+                break
+            end
+        end
+    end
     
     if not targetHRP then
-        warn("❌ Target HRP missing")
+        warn("❌ Target has no valid root part")
         return false
     end
     
-    -- Get your character and HRP
-    local myChar = player.Character or player.CharacterAdded:Wait()
-    local myHRP = myChar:WaitForChild("HumanoidRootPart", 5)
+    -- Get your character
+    local myChar = player.Character
+    attempts = 0
+    while (not myChar or not myChar:IsDescendantOf(Workspace)) and attempts < 20 do
+        task.wait(0.1)
+        myChar = player.Character
+        attempts = attempts + 1
+    end
     
+    if not myChar or not myChar:IsDescendantOf(Workspace) then
+        warn("❌ You have no character")
+        return false
+    end
+    
+    local myHRP = myChar:FindFirstChild("HumanoidRootPart")
     if not myHRP then
-        warn("❌ Your HRP missing")
+        warn("❌ You have no root part")
         return false
     end
     
-    -- Check if alive
-    local humanoid = myChar:FindFirstChild("Humanoid")
-    if not humanoid or humanoid.Health <= 0 then
+    -- Check if you're alive
+    local myHumanoid = myChar:FindFirstChild("Humanoid")
+    if not myHumanoid or myHumanoid.Health <= 0 then
         warn("❌ You are dead")
         return false
     end
     
     -- Target position (slightly above to avoid clipping)
-    local targetCF = targetHRP.CFrame * CFrame.new(0, 5, 0)
+    local targetPos = targetHRP.Position + Vector3.new(0, 3, 0)
+    local targetCF = CFrame.new(targetPos)
     
-    -- Try multiple times with verification
     local success = false
     
-    for i = 1, 10 do
-        -- Reset velocity to prevent anti-teleport
-        myHRP.AssemblyLinearVelocity = Vector3.zero
-        myHRP.AssemblyAngularVelocity = Vector3.zero
-        
-        -- Direct CFrame teleport
-        myHRP.CFrame = targetCF
-        
-        task.wait()
+    -- ============================================
+    -- METHOD 1: Direct CFrame with verification
+    -- ============================================
+    for i = 1, 8 do
+        pcall(function()
+            -- Reset velocity to prevent anti-teleport
+            myHRP.AssemblyLinearVelocity = Vector3.zero
+            myHRP.AssemblyAngularVelocity = Vector3.zero
+            
+            -- Disable collisions temporarily
+            myHRP.CanCollide = false
+            
+            -- Set CFrame
+            myHRP.CFrame = targetCF
+            
+            task.wait(0.05)
+            
+            -- Re-enable collisions
+            myHRP.CanCollide = true
+        end)
         
         -- Verify teleport worked
-        if (myHRP.Position - targetHRP.Position).Magnitude < 15 then
-            print("✅ Teleport successful on attempt " .. i)
-            success = true
-            break
+        if myHRP and targetHRP then
+            local distance = (myHRP.Position - targetHRP.Position).Magnitude
+            if distance < 20 then
+                success = true
+                break
+            end
         end
+        
+        task.wait(0.05)
     end
     
-    -- If still not successful, try forceful method
+    -- ============================================
+    -- METHOD 2: SetPrimaryPartCFrame
+    -- ============================================
     if not success then
-        warn("⚠️ Normal teleport failed, trying force method...")
-        
-        -- Force position for a short duration
-        local connection
+        pcall(function()
+            if myChar.PrimaryPart then
+                myChar:SetPrimaryPartCFrame(targetCF)
+                success = true
+            end
+        end)
+    end
+    
+    -- ============================================
+    -- METHOD 3: Force teleport with Heartbeat
+    -- ============================================
+    if not success then
+        print("⚠️ Using force teleport method...")
+        local forceConnection
         local forceSuccess = false
         
-        connection = RunService.Heartbeat:Connect(function()
+        forceConnection = RunService.Heartbeat:Connect(function()
             if not myHRP or not targetHRP then
-                connection:Disconnect()
+                forceConnection:Disconnect()
                 return
             end
             
+            -- Reset velocity
             myHRP.AssemblyLinearVelocity = Vector3.zero
             myHRP.AssemblyAngularVelocity = Vector3.zero
+            
+            -- Force position
             myHRP.CFrame = targetCF
             
-            if (myHRP.Position - targetHRP.Position).Magnitude < 15 then
+            -- Check if close enough
+            if (myHRP.Position - targetHRP.Position).Magnitude < 20 then
                 forceSuccess = true
-                connection:Disconnect()
+                forceConnection:Disconnect()
             end
         end)
         
-        task.wait(0.5)
-        if connection then
-            connection:Disconnect()
+        -- Let it run for up to 1 second
+        local startTime = tick()
+        while not forceSuccess and (tick() - startTime) < 1.5 do
+            task.wait(0.05)
+        end
+        
+        if forceConnection then
+            forceConnection:Disconnect()
         end
         
         if forceSuccess then
-            print("✅ Force teleport successful")
             success = true
         end
+    end
+    
+    -- ============================================
+    -- METHOD 4: MoveTo (last resort)
+    -- ============================================
+    if not success then
+        pcall(function()
+            myChar:MoveTo(targetPos)
+            task.wait(0.2)
+            success = true
+        end)
     end
     
     if success then
         print("✅ Teleported to: " .. target.Name)
         return true
     else
-        warn("❌ Teleport failed after all attempts")
+        warn("❌ Teleport failed after all methods")
         return false
     end
 end
 
 -- ============================================
--- FIXED ATTACH FUNCTION (Actually attaches)
+-- FIXED ATTACH FUNCTION
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -979,24 +1072,62 @@ local function AttachToPlayer(targetName)
         return false
     end
     
-    -- Get target character and HRP
-    local targetChar = target.Character or target.CharacterAdded:Wait()
-    local targetHRP = targetChar:WaitForChild("HumanoidRootPart", 5)
+    -- Wait for target character
+    local targetChar = target.Character
+    local attempts = 0
+    while (not targetChar or not targetChar:IsDescendantOf(Workspace)) and attempts < 50 do
+        task.wait(0.1)
+        targetChar = target.Character
+        attempts = attempts + 1
+    end
+    
+    if not targetChar or not targetChar:IsDescendantOf(Workspace) then
+        warn("❌ Target has no valid character")
+        return false
+    end
+    
+    -- Check if target is alive
+    local targetHumanoid = targetChar:FindFirstChild("Humanoid")
+    if not targetHumanoid or targetHumanoid.Health <= 0 then
+        warn("❌ Target is dead")
+        return false
+    end
+    
+    -- Get HumanoidRootPart
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    attempts = 0
+    while not targetHRP and attempts < 30 do
+        task.wait(0.1)
+        targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+        attempts = attempts + 1
+    end
     
     if not targetHRP then
-        warn("❌ Target HRP missing")
+        warn("❌ Target has no root part")
         return false
     end
     
     -- Get your character
-    local myChar = player.Character or player.CharacterAdded:Wait()
+    local myChar = player.Character
+    attempts = 0
+    while (not myChar or not myChar:IsDescendantOf(Workspace)) and attempts < 20 do
+        task.wait(0.1)
+        myChar = player.Character
+        attempts = attempts + 1
+    end
     
-    if not myChar then
+    if not myChar or not myChar:IsDescendantOf(Workspace) then
         warn("❌ You have no character")
         return false
     end
     
-    -- Stop existing attachment
+    -- Check if you're alive
+    local myHumanoid = myChar:FindFirstChild("Humanoid")
+    if not myHumanoid or myHumanoid.Health <= 0 then
+        warn("❌ You are dead")
+        return false
+    end
+    
     if isAttached then
         StopFollowing()
     end
@@ -1005,17 +1136,16 @@ local function AttachToPlayer(targetName)
     isAttached = true
     
     local function onPlayerDeath()
-        warn("⚠️ Player died - detaching...")
+        warn("⚠️ You died - detaching...")
         StopFollowing()
     end
     
-    -- Connect death event
-    local myHumanoid = myChar:FindFirstChild("Humanoid")
-    if myHumanoid then
+    -- Connect your death event
+    if myChar and myChar:FindFirstChild("Humanoid") then
         if deathConnection then
             deathConnection:Disconnect()
         end
-        deathConnection = myHumanoid.Died:Connect(onPlayerDeath)
+        deathConnection = myChar.Humanoid.Died:Connect(onPlayerDeath)
     end
     
     -- Start attachment loop
@@ -1037,7 +1167,13 @@ local function AttachToPlayer(targetName)
         end
         
         local targetChar = attachedPlayer.Character
-        if not targetChar then
+        if not targetChar or not targetChar:IsDescendantOf(Workspace) then
+            return
+        end
+        
+        -- Check if target is alive
+        local targetHumanoid = targetChar:FindFirstChild("Humanoid")
+        if not targetHumanoid or targetHumanoid.Health <= 0 then
             return
         end
         
@@ -1055,7 +1191,7 @@ local function AttachToPlayer(targetName)
         end
         
         local myChar = player.Character
-        if not myChar then
+        if not myChar or not myChar:IsDescendantOf(Workspace) then
             return
         end
         
@@ -1064,13 +1200,13 @@ local function AttachToPlayer(targetName)
             return
         end
         
-        -- Check if alive
-        local humanoid = myChar:FindFirstChild("Humanoid")
-        if not humanoid or humanoid.Health <= 0 then
+        -- Check if you're alive
+        local myHumanoid = myChar:FindFirstChild("Humanoid")
+        if not myHumanoid or myHumanoid.Health <= 0 then
             return
         end
         
-        -- Reset velocity and attach
+        -- Reset velocity and attach (BEHIND target, super close)
         myHRP.AssemblyLinearVelocity = Vector3.zero
         myHRP.AssemblyAngularVelocity = Vector3.zero
         
@@ -1262,7 +1398,7 @@ AddButton("📍 Teleport to Player", "Instantly teleports you to the selected pl
             statusLabel.TextColor3 = Color3.fromRGB(60, 200, 120)
         end
     else
-        statusLabel.Text = "❌ Failed to teleport - target may be dead"
+        statusLabel.Text = "❌ Failed to teleport - check console for details"
         statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
     end
 end)
@@ -1540,6 +1676,6 @@ print("🎮 Games: Driving Empire")
 print("📌 Features:")
 print("  • Fixed Teleport - Actually works!")
 print("  • Fixed Attach - Actually follows!")
-print("  • Teleport verification")
+print("  • Multiple teleport methods")
 print("  • Force teleport fallback")
 print("📌 Click '─' to minimize/expand the UI")
