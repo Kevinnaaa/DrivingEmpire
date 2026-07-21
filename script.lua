@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- Fixed: Teleport & Attach Functions
+-- Fixed: Teleport & Attach Functions (No Area Limit)
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -838,7 +838,7 @@ local function AddPlayerDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- FIXED TELEPORT FUNCTION (Multiple Methods)
+-- FIXED TELEPORT FUNCTION (No Area Limit)
 -- ============================================
 local function TeleportToPlayer(targetName)
     if not targetName or targetName == "No players found" then
@@ -905,61 +905,91 @@ local function TeleportToPlayer(targetName)
         return false
     end
     
-    -- Try multiple teleport methods
+    -- ============================================
+    -- SUPER TELEPORT - NO AREA LIMIT
+    -- ============================================
     local success = false
+    local targetPos = targetHRP.Position
+    local targetCFrame = targetHRP.CFrame
     
-    -- Method 1: MoveTo (most common)
+    -- Method 1: Set PrimaryPart CFrame (Bypasses distance checks)
     pcall(function()
-        myChar:MoveTo(targetHRP.Position)
-        success = true
+        if myChar.PrimaryPart then
+            myChar:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 3, 0)))
+            success = true
+        end
     end)
     
-    -- Method 2: SetPrimaryPartCFrame
-    if not success then
-        pcall(function()
-            if myChar.PrimaryPart then
-                myChar:SetPrimaryPartCFrame(CFrame.new(targetHRP.Position + Vector3.new(0, 3, 0)))
-                success = true
-            end
-        end)
-    end
-    
-    -- Method 3: Direct CFrame setting on HumanoidRootPart
+    -- Method 2: Force CFrame on HumanoidRootPart
     if not success then
         pcall(function()
             local myHRP = myChar:FindFirstChild("HumanoidRootPart")
-            if myHRP then
-                myHRP.CFrame = CFrame.new(targetHRP.Position + Vector3.new(0, 3, 0))
+            if myHRP and myHRP:IsA("BasePart") then
+                -- Disable collisions temporarily for smooth teleport
+                myHRP.CanCollide = false
+                myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+                task.wait(0.05)
+                myHRP.CanCollide = true
                 success = true
             end
         end)
     end
     
-    -- Method 4: Set CFrame on any large part
+    -- Method 3: Teleport all body parts (bypasses root part restrictions)
     if not success then
         pcall(function()
-            local parts = myChar:GetChildren()
+            local parts = myChar:GetDescendants()
             for _, part in ipairs(parts) do
-                if part:IsA("BasePart") and part.Name ~= "Head" then
-                    part.CFrame = CFrame.new(targetHRP.Position + Vector3.new(0, 3, 0))
-                    success = true
-                    break
+                if part:IsA("BasePart") then
+                    local offset = part.Position - (myChar.PrimaryPart and myChar.PrimaryPart.Position or Vector3.new(0, 0, 0))
+                    part.CFrame = CFrame.new(targetPos + offset + Vector3.new(0, 3, 0))
                 end
             end
+            success = true
         end)
     end
     
-    -- Method 5: Tween teleport (smooth)
+    -- Method 4: Velocity-based teleport (for games that block CFrame changes)
+    if not success then
+        pcall(function()
+            local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+            if myHRP and myHRP:IsA("BasePart") and myChar:FindFirstChild("Humanoid") then
+                local humanoid = myChar:FindFirstChild("Humanoid")
+                -- Move using velocity to avoid anti-teleport
+                myHRP.Velocity = (targetPos - myHRP.Position) * 10
+                task.wait(0.1)
+                myHRP.Velocity = Vector3.new(0, 0, 0)
+                myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+                success = true
+            end
+        end)
+    end
+    
+    -- Method 5: Tween teleport (bypasses area limit by tweening)
     if not success then
         pcall(function()
             local myHRP = myChar:FindFirstChild("HumanoidRootPart")
             if myHRP then
-                local tween = TweenService:Create(myHRP, TweenInfo.new(0.1), {
-                    CFrame = CFrame.new(targetHRP.Position + Vector3.new(0, 3, 0))
+                local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Linear)
+                local tween = TweenService:Create(myHRP, tweenInfo, {
+                    CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
                 })
                 tween:Play()
+                tween.Completed:Wait()
                 success = true
             end
+        end)
+    end
+    
+    -- Method 6: Teleport with CFrame on all parts (last resort)
+    if not success then
+        pcall(function()
+            for _, part in ipairs(myChar:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+                end
+            end
+            success = true
         end)
     end
     
@@ -973,7 +1003,7 @@ local function TeleportToPlayer(targetName)
 end
 
 -- ============================================
--- FIXED ATTACH FUNCTION
+-- FIXED ATTACH FUNCTION (No Area Limit)
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -1101,10 +1131,41 @@ local function AttachToPlayer(targetName)
             return
         end
         
-        -- Try MoveTo first
+        -- ============================================
+        -- SUPER ATTACH - NO AREA LIMIT
+        -- ============================================
+        local success = false
+        local targetPos = targetHRP.Position
+        
+        -- Method 1: SetPrimaryPartCFrame
         pcall(function()
-            myChar:MoveTo(targetHRP.Position)
+            if myChar.PrimaryPart then
+                myChar:SetPrimaryPartCFrame(CFrame.new(targetPos + Vector3.new(0, 3, 0)))
+                success = true
+            end
         end)
+        
+        -- Method 2: Direct CFrame on HumanoidRootPart
+        if not success then
+            pcall(function()
+                local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+                if myHRP and myHRP:IsA("BasePart") then
+                    myHRP.CanCollide = false
+                    myHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+                    task.wait(0.05)
+                    myHRP.CanCollide = true
+                    success = true
+                end
+            end)
+        end
+        
+        -- Method 3: MoveTo (fallback)
+        if not success then
+            pcall(function()
+                myChar:MoveTo(targetPos)
+                success = true
+            end)
+        end
     end)
     
     print("✅ Attached to: " .. target.Name)
