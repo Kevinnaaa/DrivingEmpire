@@ -1,6 +1,6 @@
 -- ============================================
 -- MODERN UI - Dark Purple Theme (#221C35)
--- Fixed: No HumanoidRootPart Error
+-- Fixed: Teleport & Attach Functions
 -- ============================================
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -838,70 +838,142 @@ local function AddPlayerDropdown(text, options, default, callback)
 end
 
 -- ============================================
--- FIXED TELEPORT FUNCTION (No HumanoidRootPart Error)
+-- FIXED TELEPORT FUNCTION (Multiple Methods)
 -- ============================================
 local function TeleportToPlayer(targetName)
     if not targetName or targetName == "No players found" then
-        print("❌ No target player selected")
+        warn("❌ No target player selected")
         return false
     end
     
     local target = Players:FindFirstChild(targetName)
     if not target then
-        print("❌ Player not found: " .. targetName)
+        warn("❌ Player not found: " .. targetName)
         return false
     end
     
     -- Wait for target character with retry
     local targetChar = target.Character
     local attempts = 0
-    while not targetChar and attempts < 20 do
-        task.wait(0.3)
+    while not targetChar and attempts < 30 do
+        task.wait(0.2)
         targetChar = target.Character
         attempts = attempts + 1
     end
     
     if not targetChar then
-        print("❌ Target has no character - they may be dead or not spawned")
+        warn("❌ Target has no character - they may be dead or not spawned")
         return false
     end
     
     -- Wait for HumanoidRootPart
     local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
     attempts = 0
-    while not targetHRP and attempts < 10 do
-        task.wait(0.3)
+    while not targetHRP and attempts < 15 do
+        task.wait(0.2)
         targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
         attempts = attempts + 1
     end
     
+    -- Try alternative root parts if HumanoidRootPart doesn't exist
     if not targetHRP then
-        print("❌ Target has no HumanoidRootPart - character may be loading")
+        local parts = targetChar:GetChildren()
+        for _, part in ipairs(parts) do
+            if part:IsA("BasePart") and part.Name ~= "Head" then
+                targetHRP = part
+                break
+            end
+        end
+    end
+    
+    if not targetHRP then
+        warn("❌ Target has no valid root part")
         return false
     end
     
     -- Check if you have a character
     local myChar = player.Character
     attempts = 0
-    while not myChar and attempts < 10 do
-        task.wait(0.3)
+    while not myChar and attempts < 15 do
+        task.wait(0.2)
         myChar = player.Character
         attempts = attempts + 1
     end
     
     if not myChar then
-        print("❌ You have no character")
+        warn("❌ You have no character")
         return false
     end
     
-    -- Teleport using MoveTo
-    myChar:MoveTo(targetHRP.Position)
-    print("✅ Teleported to: " .. target.Name)
-    return true
+    -- Try multiple teleport methods
+    local success = false
+    
+    -- Method 1: MoveTo (most common)
+    pcall(function()
+        myChar:MoveTo(targetHRP.Position)
+        success = true
+    end)
+    
+    -- Method 2: SetPrimaryPartCFrame
+    if not success then
+        pcall(function()
+            if myChar.PrimaryPart then
+                myChar:SetPrimaryPartCFrame(CFrame.new(targetHRP.Position + Vector3.new(0, 3, 0)))
+                success = true
+            end
+        end)
+    end
+    
+    -- Method 3: Direct CFrame setting on HumanoidRootPart
+    if not success then
+        pcall(function()
+            local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+            if myHRP then
+                myHRP.CFrame = CFrame.new(targetHRP.Position + Vector3.new(0, 3, 0))
+                success = true
+            end
+        end)
+    end
+    
+    -- Method 4: Set CFrame on any large part
+    if not success then
+        pcall(function()
+            local parts = myChar:GetChildren()
+            for _, part in ipairs(parts) do
+                if part:IsA("BasePart") and part.Name ~= "Head" then
+                    part.CFrame = CFrame.new(targetHRP.Position + Vector3.new(0, 3, 0))
+                    success = true
+                    break
+                end
+            end
+        end)
+    end
+    
+    -- Method 5: Tween teleport (smooth)
+    if not success then
+        pcall(function()
+            local myHRP = myChar:FindFirstChild("HumanoidRootPart")
+            if myHRP then
+                local tween = TweenService:Create(myHRP, TweenInfo.new(0.1), {
+                    CFrame = CFrame.new(targetHRP.Position + Vector3.new(0, 3, 0))
+                })
+                tween:Play()
+                success = true
+            end
+        end)
+    end
+    
+    if success then
+        print("✅ Teleported to: " .. target.Name)
+        return true
+    else
+        warn("❌ All teleport methods failed")
+        return false
+    end
 end
 
 -- ============================================
--- FIXED ATTACH FUNCTION (No HumanoidRootPart Error)
+-- FIXED ATTACH FUNCTION
 -- ============================================
 local function StopFollowing()
     isAttached = false
@@ -921,41 +993,52 @@ end
 
 local function AttachToPlayer(targetName)
     if not targetName or targetName == "No players found" then
-        print("❌ No target player selected")
+        warn("❌ No target player selected")
         return false
     end
     
     local target = Players:FindFirstChild(targetName)
     if not target then
-        print("❌ Player not found: " .. targetName)
+        warn("❌ Player not found: " .. targetName)
         return false
     end
     
     -- Wait for target character with retry
     local targetChar = target.Character
     local attempts = 0
-    while not targetChar and attempts < 20 do
-        task.wait(0.3)
+    while not targetChar and attempts < 30 do
+        task.wait(0.2)
         targetChar = target.Character
         attempts = attempts + 1
     end
     
     if not targetChar then
-        print("❌ Target has no character - they may be dead or not spawned")
+        warn("❌ Target has no character - they may be dead or not spawned")
         return false
     end
     
     -- Wait for HumanoidRootPart
     local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
     attempts = 0
-    while not targetHRP and attempts < 10 do
-        task.wait(0.3)
+    while not targetHRP and attempts < 15 do
+        task.wait(0.2)
         targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
         attempts = attempts + 1
     end
     
+    -- Try alternative root parts
     if not targetHRP then
-        print("❌ Target has no HumanoidRootPart - character may be loading")
+        local parts = targetChar:GetChildren()
+        for _, part in ipairs(parts) do
+            if part:IsA("BasePart") and part.Name ~= "Head" then
+                targetHRP = part
+                break
+            end
+        end
+    end
+    
+    if not targetHRP then
+        warn("❌ Target has no valid root part")
         return false
     end
     
@@ -967,7 +1050,7 @@ local function AttachToPlayer(targetName)
     isAttached = true
     
     local function onPlayerDeath()
-        print("⚠️ Player died - detaching...")
+        warn("⚠️ Player died - detaching...")
         StopFollowing()
     end
     
@@ -990,7 +1073,7 @@ local function AttachToPlayer(targetName)
         end
         
         if not attachedPlayer.Parent then
-            print("⚠️ Target left the game - detaching...")
+            warn("⚠️ Target left the game - detaching...")
             StopFollowing()
             return
         end
@@ -1002,7 +1085,15 @@ local function AttachToPlayer(targetName)
         
         local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
         if not targetHRP then
-            return
+            -- Try alternative
+            local parts = targetChar:GetChildren()
+            for _, part in ipairs(parts) do
+                if part:IsA("BasePart") and part.Name ~= "Head" then
+                    targetHRP = part
+                    break
+                end
+            end
+            if not targetHRP then return end
         end
         
         local myChar = player.Character
@@ -1010,7 +1101,10 @@ local function AttachToPlayer(targetName)
             return
         end
         
-        myChar:MoveTo(targetHRP.Position)
+        -- Try MoveTo first
+        pcall(function()
+            myChar:MoveTo(targetHRP.Position)
+        end)
     end)
     
     print("✅ Attached to: " .. target.Name)
@@ -1173,7 +1267,7 @@ AddDivider()
 -- Teleport Button
 AddButton("📍 Teleport to Player", "Instantly teleports you to the selected player", function()
     if not selectedTargetName or selectedTargetName == "No players found" then
-        print("❌ No player selected")
+        warn("❌ No player selected")
         return
     end
     
@@ -1201,7 +1295,7 @@ end)
 -- Attach Button
 AddButton("🔗 Attach to Player", "Follows the selected player continuously", function()
     if not selectedTargetName or selectedTargetName == "No players found" then
-        print("❌ No player selected")
+        warn("❌ No player selected")
         return
     end
     
@@ -1224,7 +1318,7 @@ end)
 -- Detach Button
 AddButton("🔓 Detach from Player", "Stops following the attached player", function()
     if not isAttached then
-        print("❌ Not attached to anyone")
+        warn("❌ Not attached to anyone")
         if statusLabel then
             statusLabel.Text = "❌ Not attached to anyone"
             statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
